@@ -1,13 +1,13 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "Wild Graphql Datasource",
+  "name": "Wild GraphQL Datasource",
   "id": "wildmountainfarms-wildgraphql-datasource",
   "metrics": true,
   "backend": true,
   "executable": "gpx_wild_graphql_datasource",
   "info": {
-    "description": "Grafana datasource to interpret graph ql query results as timeseries data",
+    "description": "Grafana datasource to interpret GraphQL query results as timeseries data",
     "author": {
       "name": "Wildmountainfarms"
     },
