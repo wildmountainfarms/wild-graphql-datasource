@@ -1,11 +1,14 @@
 package plugin
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"math/rand"
+	"io"
+	"net/http"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -25,13 +28,30 @@ var (
 )
 
 // NewDatasource creates a new datasource instance.
-func NewDatasource(_ context.Context, _ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	return &Datasource{}, nil
+func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	// https://community.grafana.com/t/how-to-make-user-configurable-http-requests-from-your-data-source-plugin/59724
+	//   Since we use the DataSourceHttpSettings, we can easily parse the settings
+	httpOptions, err := settings.HTTPClientOptions(ctx)
+	if err != nil {
+		return nil, err
+	}
+	client, err := httpclient.New(httpOptions)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Datasource{
+		settings:   settings,
+		httpClient: client,
+	}, nil
 }
 
 // Datasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
-type Datasource struct{}
+type Datasource struct {
+	settings   backend.DataSourceInstanceSettings
+	httpClient *http.Client
+}
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance
 // created. As soon as datasource settings change detected by SDK old datasource instance will
@@ -50,11 +70,16 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 
 	// loop over queries and execute them individually.
 	for _, q := range req.Queries {
-		res := d.query(ctx, req.PluginContext, q)
+		res, err := d.query(ctx, req.PluginContext, q)
+		if err != nil {
+			// If an error is returned from the query, we assume that it is not a recoverable error.
+			//   We can consider changing this in the future
+			return nil, err
+		}
 
 		// save the response in a hashmap
 		// based on with RefID as identifier
-		response.Responses[q.RefID] = res
+		response.Responses[q.RefID] = *res // we don't expect the result to be nil if err is not nil
 	}
 
 	return response, nil
@@ -66,11 +91,16 @@ type queryModel struct {
 }
 
 type graphQLRequest struct {
-	query     string
-	variables map[string]interface{}
+	Query string `json:"query"`
+	// A map of variable names to the value of that variable. Allowed value types are strings, numeric types, and booleans
+	Variables map[string]interface{} `json:"variables,omitempty"`
 }
 
-func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
+func (request *graphQLRequest) toBody() ([]byte, error) {
+	return json.Marshal(request)
+}
+
+func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) (*backend.DataResponse, error) {
 	var response backend.DataResponse
 
 	// Unmarshal the JSON into our queryModel.
@@ -78,7 +108,8 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 
 	err := json.Unmarshal(query.JSON, &qm)
 	if err != nil {
-		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal: %v", err.Error()))
+		// We don't
+		return nil, err
 	}
 	// Although the frontend has access to global variable substitution (https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#global-variables)
 	//   the backend does not.
@@ -89,13 +120,19 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 	//   More information here: https://grafana.com/docs/grafana/latest/dashboards/variables/
 
 	//requestJson := graphQLRequest{
-	var _ = graphQLRequest{
-		query: qm.query,
-		variables: map[string]interface{}{
+	request := graphQLRequest{
+		Query: qm.query,
+		Variables: map[string]interface{}{
 			"from":        query.TimeRange.From.UnixMilli(),
 			"to":          query.TimeRange.To.UnixMilli(),
 			"interval_ms": query.Interval.Milliseconds(),
 		},
+	}
+	_, err = request.toBody()
+	if err != nil {
+		// We don't actually expect this to happen, so we can return an "unrecoverable" error
+		return nil, err
+		//return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("Internal request.toBody() error: %v", err.Error()))
 	}
 
 	// TODO follow this tutorial: https://www.thepolyglotdeveloper.com/2020/02/interacting-with-a-graphql-api-with-golang/
@@ -114,27 +151,58 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 	// add the frames to the response.
 	response.Frames = append(response.Frames, frame)
 
-	return response
+	return &response, nil
 }
 
 // CheckHealth handles health checks sent from Grafana to the plugin.
 // The main use case for these health checks is the test button on the
 // datasource configuration page which allows users to verify that
 // a datasource is working as expected.
-func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	// test command to do the same thing:
+	//   curl -X POST -H "Content-Type: application/json" -d '{"query":"{\n\t\t  __schema{\n\t\t\tqueryType{name}\n\t\t  }\n\t\t}"}' https://swapi-graphql.netlify.app/.netlify/functions/index
+	request := graphQLRequest{
+		Query: `{
+		  __schema{
+			queryType{name}
+		  }
+		}`,
+		Variables: map[string]interface{}{},
+	}
+	body, err := request.toBody()
+	if err != nil {
+		return nil, nil
+	}
+	log.DefaultLogger.Info(fmt.Sprintf("Body: %s", body))
 
-	log.DefaultLogger.Info("Did a health check!")
+	httpReq, err := http.NewRequestWithContext(ctx, "POST", d.settings.URL, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	// if we don't add this header, we get an error of "Must provide query string"
+	httpReq.Header.Add("Content-Type", "application/json")
 
-	var status = backend.HealthStatusOk
-	var message = "Data source is working"
+	resp, err := d.httpClient.Do(httpReq)
+	if err != nil {
+		return nil, err
+	}
 
-	if rand.Int()%2 == 0 {
-		status = backend.HealthStatusError
-		message = "randomized error"
+	if resp.StatusCode != 200 {
+		responseBody, bodyReadErr := io.ReadAll(resp.Body)
+		if bodyReadErr != nil {
+			log.DefaultLogger.Error("We don't expect this!")
+			return nil, bodyReadErr
+		}
+		log.DefaultLogger.Info(fmt.Sprintf("Response: %s", responseBody))
+
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: "Something went wrong: " + resp.Status,
+		}, nil
 	}
 
 	return &backend.CheckHealthResult{
-		Status:  status,
-		Message: message,
+		Status:  backend.HealthStatusOk,
+		Message: "Success",
 	}, nil
 }
