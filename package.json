@@ -1,7 +1,7 @@
 {
   "name": "wild-graphql-datasource",
   "version": "1.0.0",
-  "description": "Grafana datasource to interpret graph ql query results as timeseries data",
+  "description": "Grafana datasource to interpret GraphQL query results as timeseries data",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
     "dev": "webpack -w -c ./.config/webpack/webpack.config.ts --env development",
@@ -16,7 +16,7 @@
     "sign": "npx --yes @grafana/sign-plugin@latest"
   },
   "author": "wildmountainfarms",
-  "license": "Apache-2.0",
+  "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.21.4",
     "@grafana/e2e": "10.0.3",

@@ -1,6 +1,18 @@
 # Wild GraphQL Datasource
 
-This is a Grafana datasource that aims to make requesting timeseries data via a GraphQL endpoint easy.
+**This is work in progress and is not in a working state.**
+
+This is a Grafana datasource that aims to make requesting time series data via a GraphQL endpoint easy.
+This datasource is similar to https://github.com/fifemon/graphql-datasource, but is not compatible.
+This datasource tries to reimagine how GraphQL queries should be made from Grafana.
+
+
+## Development
+
+https://grafana.com/developers/plugin-tools/create-a-plugin/develop-a-plugin/best-practices
+
+https://grafana.com/developers/plugin-tools/tutorials/build-a-data-source-backend-plugin
+
 
 ## Building and Development
 
@@ -23,14 +35,15 @@ Customize this setup to your liking.
 # install nvm https://github.com/nvm-sh/nvm#installing-and-updating
 nvm install 20
 
-# NOTICE: This `rm` command will remove your existing go installation
-rm -rf ~/go 
-wget -c https://dl.google.com/go/go1.21.5.linux-amd64.tar.gz -O - | tar -xz -C ~/
-echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.bashrc
+rm -rf /usr/local/go
+wget -c https://dl.google.com/go/go1.21.5.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
+# /usr/local/go is GOROOT $HOME/go is GOPATH, so add both bins to path
+echo 'export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"' >> ~/.bashrc
 
 cd ~/Documents/Clones
 git clone https://github.com/magefile/mage
 cd mage
+# This will install to GOPATH, which is $HOME/go by default
 go run bootstrap.go
 
 # *docker installation not shown*
@@ -39,22 +52,29 @@ go run bootstrap.go
 
 ### Setup build environment
 
+Go setup
 ```shell
+# This will install to your GOPATH, which is $HOME/go by default.
 go get -u github.com/grafana/grafana-plugin-sdk-go
 go mod tidy
 mage -v
 mage -l
-
-npm install
-npm run dev
-npm run build
 ```
+
+Node setup:
+
+```shell
+npm install
+```
+
 
 ### Test inside Grafana instance
 
 Note that `npm run server` uses `docker compose` under the hood.
 
 ```shell
+npm run dev
+mage -v build:linux
 npm run server
 ```
 
@@ -64,3 +84,11 @@ You may choose to use VS Code, which has free tools for developing TypeScript an
 IntelliJ IDEA Ultimate is a non-free choice that has support for both TypeScript and Go code.
 Alternatively, WebStorm (also not free) covers TypeScript development and GoLand covers Go development.
 
+If you are using IntelliJ IDEA Ultimate, make sure go to "Language & Frameworks > Go Modules" and click "Enable go modules integration".
+
+If you are using VS Code, this is a good read: https://github.com/golang/vscode-go/blob/master/docs/gopath.md
+
+
+## To-Do
+
+* Add metrics to backend component: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins#implement-metrics-in-your-plugin

@@ -9,7 +9,7 @@
   "info": {
     "description": "Grafana datasource to interpret GraphQL query results as timeseries data",
     "author": {
-      "name": "Wildmountainfarms"
+      "name": "wildmountainfarms"
     },
     "keywords": ["datasource"],
     "logos": {

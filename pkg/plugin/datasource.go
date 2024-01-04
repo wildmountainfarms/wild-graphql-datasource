@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"math/rand"
 	"time"
 
@@ -59,7 +60,15 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	return response, nil
 }
 
-type queryModel struct{}
+// queryModel represents data sent from the frontend to perform a query
+type queryModel struct {
+	query string
+}
+
+type graphQLRequest struct {
+	query     string
+	variables map[string]interface{}
+}
 
 func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) backend.DataResponse {
 	var response backend.DataResponse
@@ -71,6 +80,25 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 	if err != nil {
 		return backend.ErrDataResponse(backend.StatusBadRequest, fmt.Sprintf("json unmarshal: %v", err.Error()))
 	}
+	// Although the frontend has access to global variable substitution (https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#global-variables)
+	//   the backend does not.
+	//   Because of this, it's beneficial to encourage users to write queries that rely as little on the frontend as possible.
+	//   This allows us to support alerting later.
+	//   These variable names that we are "hard coding" should be as similar to possible as those global variables that are available
+	//   Forum post here: https://community.grafana.com/t/how-to-use-template-variables-in-your-data-source/63250#backend-data-sources-3
+	//   More information here: https://grafana.com/docs/grafana/latest/dashboards/variables/
+
+	//requestJson := graphQLRequest{
+	var _ = graphQLRequest{
+		query: qm.query,
+		variables: map[string]interface{}{
+			"from":        query.TimeRange.From.UnixMilli(),
+			"to":          query.TimeRange.To.UnixMilli(),
+			"interval_ms": query.Interval.Milliseconds(),
+		},
+	}
+
+	// TODO follow this tutorial: https://www.thepolyglotdeveloper.com/2020/02/interacting-with-a-graphql-api-with-golang/
 
 	// create data frame response.
 	// For an overview on data frames and how grafana handles them:
@@ -94,6 +122,9 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 // datasource configuration page which allows users to verify that
 // a datasource is working as expected.
 func (d *Datasource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+
+	log.DefaultLogger.Info("Did a health check!")
+
 	var status = backend.HealthStatusOk
 	var message = "Data source is working"
 
