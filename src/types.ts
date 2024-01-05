@@ -3,6 +3,7 @@ import { DataQuery } from '@grafana/schema';
 
 interface WildGraphQLCommonQuery extends DataQuery {
   queryText: string;
+  operationName: string;
 }
 
 /**

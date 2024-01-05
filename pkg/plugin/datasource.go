@@ -1,13 +1,12 @@
 package plugin
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"io"
 	"net/http"
 	"time"
 
@@ -65,10 +64,14 @@ func (d *Datasource) Dispose() {
 // The QueryDataResponse contains a map of RefID to the response for each query, and each response
 // contains Frames ([]*Frame).
 func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	// create response struct
 	response := backend.NewQueryDataResponse()
 
-	// loop over queries and execute them individually.
+	// We are currently not implementing any sort of batching strategy.
+	//   First off, not every GraphQL server supports batching
+	//   More info here: https://github.com/graphql/graphql-spec/issues/375 and also here: https://github.com/graphql/graphql-spec/issues/583#issuecomment-491807207
+	// It's absolutely possible for us to try to combine multiple queries into a single one,
+	//   but attempting to do that is out of scope for us right now, especially with how complicated a GraphQL query can be.
+
 	for _, q := range req.Queries {
 		res, err := d.query(ctx, req.PluginContext, q)
 		if err != nil {
@@ -77,9 +80,8 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 			return nil, err
 		}
 
-		// save the response in a hashmap
-		// based on with RefID as identifier
-		response.Responses[q.RefID] = *res // we don't expect the result to be nil if err is not nil
+		// save the response in a hashmap based on with RefID as identifier
+		response.Responses[q.RefID] = *res
 	}
 
 	return response, nil
@@ -87,30 +89,45 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 
 // queryModel represents data sent from the frontend to perform a query
 type queryModel struct {
-	query string
+	QueryText string `json:"queryText"`
+	// The name of the operation, or a blank string to let the GraphQL server infer the operation name
+	OperationName string `json:"operationName"`
 }
 
-type graphQLRequest struct {
-	Query string `json:"query"`
-	// A map of variable names to the value of that variable. Allowed value types are strings, numeric types, and booleans
-	Variables map[string]interface{} `json:"variables,omitempty"`
+func statusFromResponse(response http.Response) backend.Status {
+	for _, status := range []backend.Status{} {
+		if response.StatusCode == int(status) {
+			return status
+		}
+	}
+	return backend.StatusUnknown
 }
 
-func (request *graphQLRequest) toBody() ([]byte, error) {
-	return json.Marshal(request)
-}
-
-func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query backend.DataQuery) (*backend.DataResponse, error) {
+// Executes a single GraphQL query.
+// In most error scenarios, the error should be nested within the DataResponse.
+// In some cases that are never expected to happen, error is returned and the DataResponse is nil.
+// In these cases, you can assume that something is seriously wrong, as we didn't intend to recover from that specific situation.
+func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) (*backend.DataResponse, error) {
 	var response backend.DataResponse
+
+	log.DefaultLogger.Info(fmt.Sprintf("JSON is: %s", query.JSON))
 
 	// Unmarshal the JSON into our queryModel.
 	var qm queryModel
 
 	err := json.Unmarshal(query.JSON, &qm)
 	if err != nil {
-		// We don't
-		return nil, err
+		// A JSON parsing error *could* occur if someone screws up the JSON of a particular query manually.
+		//   When that happens, we want to actually prepare for it, even though it's extremely unlikely.
+		//   By not returning an error and instead nested it in the DataResponse,
+		//   we tell Grafana that the error is within a specific query.
+		return &backend.DataResponse{
+			Error:  err,
+			Status: backend.StatusBadRequest,
+		}, nil
 	}
+	log.DefaultLogger.Info("Query text is: " + qm.QueryText)
+
 	// Although the frontend has access to global variable substitution (https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#global-variables)
 	//   the backend does not.
 	//   Because of this, it's beneficial to encourage users to write queries that rely as little on the frontend as possible.
@@ -119,23 +136,64 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 	//   Forum post here: https://community.grafana.com/t/how-to-use-template-variables-in-your-data-source/63250#backend-data-sources-3
 	//   More information here: https://grafana.com/docs/grafana/latest/dashboards/variables/
 
-	//requestJson := graphQLRequest{
-	request := graphQLRequest{
-		Query: qm.query,
+	graphQLRequest := GraphQLRequest{
+		Query: qm.QueryText,
 		Variables: map[string]interface{}{
 			"from":        query.TimeRange.From.UnixMilli(),
 			"to":          query.TimeRange.To.UnixMilli(),
 			"interval_ms": query.Interval.Milliseconds(),
 		},
 	}
-	_, err = request.toBody()
+	request, err := graphQLRequest.ToRequest(ctx, d.settings.URL)
 	if err != nil {
-		// We don't actually expect this to happen, so we can return an "unrecoverable" error
+		// We don't expect the conversion of the GraphQLRequest into a http.Request to fail
 		return nil, err
-		//return backend.ErrDataResponse(backend.StatusInternal, fmt.Sprintf("Internal request.toBody() error: %v", err.Error()))
 	}
 
-	// TODO follow this tutorial: https://www.thepolyglotdeveloper.com/2020/02/interacting-with-a-graphql-api-with-golang/
+	resp, err := d.httpClient.Do(request)
+	if err != nil {
+		// http.Client.Do returns an error when there's a network connectivity problem or something weird going on,
+		//   so we expect this to happen every once in a while
+		return &backend.DataResponse{
+			Error:  err,
+			Status: backend.StatusBadRequest,
+		}, nil
+	}
+	status := statusFromResponse(*resp)
+
+	graphQLResponse, responseParseError := ParseGraphQLResponse(resp.Body)
+	if responseParseError != nil {
+		return &backend.DataResponse{
+			Error:  err,
+			Status: status,
+		}, nil
+	}
+	if len(graphQLResponse.Errors) > 0 {
+		var errorsString = ""
+		for i, graphQLError := range graphQLResponse.Errors {
+			if i != 0 {
+				errorsString += ", "
+			}
+			errorsString += graphQLError.Message
+		}
+		return &backend.DataResponse{
+			Error:  errors.New(fmt.Sprintf("GraphQL response had %d error(s): %s", len(graphQLResponse.Errors), errorsString)),
+			Status: status,
+		}, nil
+	}
+	if resp.StatusCode != 200 {
+		return &backend.DataResponse{
+			Error:  errors.New("got non-200 status: " + resp.Status),
+			Status: status,
+		}, nil
+	}
+
+	dataBytes, serializeError := json.Marshal(graphQLResponse.Data)
+	if serializeError != nil {
+		return nil, serializeError // this should not happen
+	}
+
+	log.DefaultLogger.Info(fmt.Sprintf("Successful query! %s", dataBytes))
 
 	// create data frame response.
 	// For an overview on data frames and how grafana handles them:
@@ -161,43 +219,54 @@ func (d *Datasource) query(_ context.Context, pCtx backend.PluginContext, query 
 func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	// test command to do the same thing:
 	//   curl -X POST -H "Content-Type: application/json" -d '{"query":"{\n\t\t  __schema{\n\t\t\tqueryType{name}\n\t\t  }\n\t\t}"}' https://swapi-graphql.netlify.app/.netlify/functions/index
-	request := graphQLRequest{
+	graphQLRequest := GraphQLRequest{
 		Query: `{
 		  __schema{
-			queryType{name}
+		    queryType{name}
 		  }
 		}`,
 		Variables: map[string]interface{}{},
 	}
-	body, err := request.toBody()
-	if err != nil {
-		return nil, nil
-	}
-	log.DefaultLogger.Info(fmt.Sprintf("Body: %s", body))
-
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", d.settings.URL, bytes.NewBuffer(body))
-	if err != nil {
-		return nil, err
-	}
-	// if we don't add this header, we get an error of "Must provide query string"
-	httpReq.Header.Add("Content-Type", "application/json")
-
-	resp, err := d.httpClient.Do(httpReq)
+	request, err := graphQLRequest.ToRequest(ctx, d.settings.URL)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != 200 {
-		responseBody, bodyReadErr := io.ReadAll(resp.Body)
-		if bodyReadErr != nil {
-			log.DefaultLogger.Error("We don't expect this!")
-			return nil, bodyReadErr
+	resp, err := d.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
+	graphQLResponse, responseParseError := ParseGraphQLResponse(resp.Body)
+	if responseParseError != nil {
+		if resp.StatusCode == 200 {
+			return &backend.CheckHealthResult{
+				Status:  backend.HealthStatusError,
+				Message: "Successful status code, but could not parse GraphQL response",
+			}, nil
 		}
-		log.DefaultLogger.Info(fmt.Sprintf("Response: %s", responseBody))
-
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: "Could not parse GraphQL response! Got status: " + resp.Status,
+		}, nil
+	}
+	if len(graphQLResponse.Errors) > 0 {
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: "GraphQL response contained errors! HTTP status: " + resp.Status,
+		}, nil
+	}
+	if resp.StatusCode != 200 {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
 			Message: "Something went wrong: " + resp.Status,
+		}, nil
+	}
+	_, schemaExists := graphQLResponse.Data["__schema"]
+	if !schemaExists {
+		return &backend.CheckHealthResult{
+			Status:  backend.HealthStatusError,
+			Message: "Unexpected GraphQL response!",
 		}, nil
 	}
 
