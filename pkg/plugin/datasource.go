@@ -193,7 +193,8 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 		return nil, serializeError // this should not happen
 	}
 
-	log.DefaultLogger.Info(fmt.Sprintf("Successful query! %s", dataBytes))
+	log.DefaultLogger.Info("Successful query!")
+	log.DefaultLogger.Info(fmt.Sprintf("result is: %s", dataBytes))
 
 	// create data frame response.
 	// For an overview on data frames and how grafana handles them:

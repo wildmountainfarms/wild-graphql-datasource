@@ -14,7 +14,8 @@ import (
 type GraphQLRequest struct {
 	Query string `json:"query"`
 	// A map of variable names to the value of that variable. Allowed value types are strings, numeric types, and booleans
-	Variables map[string]interface{} `json:"variables,omitempty"`
+	Variables     map[string]interface{} `json:"variables,omitempty"`
+	OperationName string                 `json:"operationName,omitempty"`
 }
 
 func (request *GraphQLRequest) ToBody() ([]byte, error) {
