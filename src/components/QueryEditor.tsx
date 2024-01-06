@@ -3,12 +3,28 @@ import {InlineField, Input} from '@grafana/ui';
 import {QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
 import {WildGraphQLDataSourceOptions, WildGraphQLMainQuery} from '../types';
-import {GraphiQL} from 'graphiql';
-import 'graphiql/graphiql.css';
+import {GraphiQLInterface} from 'graphiql';
+import {
+  EditorContextProvider,
+  ExplorerContextProvider,
+  PluginContextProvider,
+  SchemaContextProvider,
+  ExecutionContextProvider,
+  // StorageContextProvider,
+  // HistoryContextProvider
+} from '@graphiql/react';
 import {Fetcher} from '@graphiql/toolkit';
 import {FetcherOpts, FetcherParams} from "@graphiql/toolkit/src/create-fetcher/types";
 import {getBackendSrv} from "@grafana/runtime";
-import { firstValueFrom } from 'rxjs';
+import {firstValueFrom} from 'rxjs';
+
+import 'graphiql/graphiql.css';
+
+// import '@graphiql/react/dist/style.css';
+// import '@graphiql/react/font/roboto.css';
+// import '@graphiql/react/font/fira-code.css';
+
+
 
 type Props = QueryEditorProps<DataSource, WildGraphQLMainQuery, WildGraphQLDataSourceOptions>;
 
@@ -60,9 +76,6 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
     );
   }, [datasource.options.url, datasource.options.withCredentials, datasource.options.basicAuth]);
 
-  const onQueryTextChange = (event: ChangeEvent<HTMLInputElement>) => {
-    onChange({ ...query, queryText: event.target.value });
-  };
   const onOperationNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange({ ...query, operationName: event.target.value || undefined });
   };
@@ -73,15 +86,53 @@ export function QueryEditor({ query, onChange, onRunQuery, datasource }: Props) 
       <div className="gf-form-group">
         <div className="gf-form">
           {/*<InlineFormLabel width={13}>Query</InlineFormLabel>*/}
-          <GraphiQL fetcher={fetcher}/>
+          {/*<GraphiQL*/}
+          {/*  fetcher={fetcher}*/}
+          {/*  defaultQuery={query.queryText}*/}
+          {/*  onEditQuery={(value) => {*/}
+          {/*    console.log("Edited query");*/}
+          {/*    console.log(value);*/}
+          {/*    onChange({...query, queryText: value});*/}
+          {/*  }}*/}
+          {/*  isHeadersEditorEnabled={false}*/}
+          {/*  showPersistHeadersSettings={false}*/}
+          {/*  storage={DummyStorage}*/}
+          {/*  shouldPersistHeaders={false}*/}
+          {/*  plugins={}*/}
+          {/*/>*/}
+
+          {/*By not providing storage, history contexts, they won't be used*/}
+          {/*<StorageContextProvider storage={DummyStorage}>*/}
+          {/*  <HistoryContextProvider maxHistoryLength={0}>*/}
+          <EditorContextProvider
+            defaultQuery={query.queryText}
+          >
+            <SchemaContextProvider fetcher={fetcher}>
+              <ExecutionContextProvider
+                fetcher={fetcher}
+                // TODO consider passing operationName here
+              >
+                <ExplorerContextProvider> {/*Explorer context needed for documentation*/}
+                  <PluginContextProvider>
+                    <GraphiQLInterface
+                      showPersistHeadersSettings={false}
+                      // TODO add disableTabs={true} when release supports https://github.com/graphql/graphiql/pull/3408
+                      isHeadersEditorEnabled={false}
+                      onEditQuery={(value) => {
+                        console.log("Edited query");
+                        console.log(value);
+                        onChange({...query, queryText: value});
+                      }}
+                    />
+                  </PluginContextProvider>
+                </ExplorerContextProvider>
+              </ExecutionContextProvider>
+            </SchemaContextProvider>
+          </EditorContextProvider>
+
         </div>
         <div className="gf-form-inline">
-          <InlineField label="Query Text" labelWidth={16} tooltip="The GraphQL query">
-            <Input onChange={onQueryTextChange} value={query.queryText}/>
-          </InlineField>
-        </div>
-        <div className="gf-form-inline">
-          <InlineField label="Operation Name" labelWidth={16}
+          <InlineField label="Operation Name" labelWidth={32}
                        tooltip="The operationName passed to the GraphQL endpoint. This can be left blank unless you specify multiple queries.">
             <Input onChange={onOperationNameChange} value={query.operationName ?? ''}/>
           </InlineField>
