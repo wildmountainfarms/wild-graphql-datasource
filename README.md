@@ -89,6 +89,19 @@ If you are using IntelliJ IDEA Ultimate, make sure go to "Language & Frameworks 
 If you are using VS Code, this is a good read: https://github.com/golang/vscode-go/blob/master/docs/gopath.md
 
 
+### Common Errors During Development
+
+* `Watchpack Error (watcher): Error: ENOSPC: System limit for number of file watchers reached, watch`
+  * https://stackoverflow.com/a/55543310/5434860
+
+## Dependency Notes
+
+This section contains notes about dependencies.
+
+* `graphql-ws` is not actually required by us, but this issue is unresolved so that's why we include it
+  * https://github.com/graphql/graphiql/issues/2405#issuecomment-1469851608 (yes as of writing it says it's closed, but it's not)
+  * It's not a bad thing that we include this dependency because it gives us a couple of types that we end up using
+
 ## To-Do
 
 * Add metrics to backend component: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins#implement-metrics-in-your-plugin

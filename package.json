@@ -63,8 +63,9 @@
     "@grafana/runtime": "10.0.3",
     "@grafana/schema": "10.0.3",
     "@grafana/ui": "10.0.3",
-    "graphiql": "^3.0.10",
+    "graphiql": "^3.1.0",
     "graphql": "^16.8.1",
+    "graphql-ws": "^5.14.3",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "tslib": "2.5.3"

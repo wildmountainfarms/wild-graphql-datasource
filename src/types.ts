@@ -3,6 +3,7 @@ import { DataQuery } from '@grafana/schema';
 
 interface WildGraphQLCommonQuery extends DataQuery {
   queryText: string;
+  /** The operation name if explicitly set. Note that an empty string should be treated the same way as an undefined value, although storing an undefined value is preferred.*/
   operationName?: string;
 }
 
@@ -12,7 +13,19 @@ interface WildGraphQLCommonQuery extends DataQuery {
 export interface WildGraphQLMainQuery extends WildGraphQLCommonQuery {
 }
 
+
 export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
+  queryText: `query BatteryVoltage($from: Long!, $to: Long!) {
+  queryStatus(sourceId: "default", from: $from, to: $to) {
+    batteryVoltage {
+      dateMillis
+      packet {
+        batteryVoltage
+      }
+    }
+  }
+}
+`,
 };
 
 /**
