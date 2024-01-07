@@ -2,14 +2,14 @@ import React, {ChangeEvent, useEffect, useMemo} from 'react';
 import {InlineField, Input} from '@grafana/ui';
 import {QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
-import {WildGraphQLDataSourceOptions, WildGraphQLMainQuery} from '../types';
+import {getQueryVariablesAsJsonString, WildGraphQLDataSourceOptions, WildGraphQLMainQuery} from '../types';
 import {GraphiQLInterface} from 'graphiql';
 import {
   EditorContextProvider,
+  ExecutionContextProvider,
   ExplorerContextProvider,
   PluginContextProvider,
   SchemaContextProvider,
-  ExecutionContextProvider,
   useEditorContext
 } from '@graphiql/react';
 import {Fetcher} from '@graphiql/toolkit';
@@ -87,12 +87,11 @@ export function QueryEditor(props: Props) {
 
   const fetcher = useMemo(() => {
     return createFetcher(
-      datasource.options.url!,
-      datasource.options.withCredentials ?? false,
-      datasource.options.basicAuth
+      datasource.settings.url!,
+      datasource.settings.withCredentials ?? false,
+      datasource.settings.basicAuth
     );
-  }, [datasource.options.url, datasource.options.withCredentials, datasource.options.basicAuth]);
-
+  }, [datasource.settings.url, datasource.settings.withCredentials, datasource.settings.basicAuth]);
 
   return (
     <>
@@ -100,7 +99,12 @@ export function QueryEditor(props: Props) {
       {/*<StorageContextProvider storage={DummyStorage}>*/}
       {/*  <HistoryContextProvider maxHistoryLength={0}>*/}
       <EditorContextProvider
-        defaultQuery={query.queryText}
+        // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
+        defaultTabs={[{
+          query: query.queryText,
+          // NOTE: For some reason if you specify variable here, it just doesn't work...
+        }]}
+        variables={getQueryVariablesAsJsonString(query)}
         // we don't need to pass onEditOperationName here because we have a callback that handles it ourselves
       >
         <SchemaContextProvider fetcher={fetcher}>
@@ -162,7 +166,11 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
               onChange({...query, queryText: value});
             }}
             onEditVariables={(variablesJsonString) => {
-              // TODO
+              if (variablesJsonString) {
+                onChange({...query, variables: variablesJsonString});
+              } else {
+                onChange({...query, variables: undefined});
+              }
             }}
           />
         </div>
