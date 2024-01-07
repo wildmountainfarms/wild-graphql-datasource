@@ -92,6 +92,8 @@ type queryModel struct {
 	QueryText string `json:"queryText"`
 	// The name of the operation, or a blank string to let the GraphQL server infer the operation name
 	OperationName string `json:"operationName"`
+	// The variables for the operation. May either be a string or a map[string]interface{}
+	Variables interface{} `json:"variables"`
 }
 
 func statusFromResponse(response http.Response) backend.Status {
@@ -136,13 +138,35 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 	//   Forum post here: https://community.grafana.com/t/how-to-use-template-variables-in-your-data-source/63250#backend-data-sources-3
 	//   More information here: https://grafana.com/docs/grafana/latest/dashboards/variables/
 
+	var variables = map[string]interface{}{}
+	switch value := qm.Variables.(type) {
+	case string:
+		// This case happens when the frontend is not involved at all. This is likely an alert.
+		// Remember that these variables are not interpolated
+
+		err := json.Unmarshal([]byte(value), &variables)
+		if err != nil {
+			log.DefaultLogger.Error(fmt.Sprintf("Got error while parsing variables! Error: %s", err.Error()))
+			log.DefaultLogger.Info(fmt.Sprintf("Value of variables from parsing error is: %s", value))
+
+			// continue executing query without interpolated variables
+			// TODO consider if we want a flag in the options to prevent the query from continuing further in the case of an error
+		}
+	case map[string]interface{}:
+		// This case happens when the frontend is able to interpolate the variables before passing them to us
+		//   or happens when someone has directly configured the variables option in the JSON itself
+		//   and storing it as an object rather than a string like the QueryEditor does.
+		//   If this is the ladder case, variables have not been interpolated
+		variables = value
+	default:
+		log.DefaultLogger.Error("Unable to parse variables for ref ID:" + query.RefID)
+	}
+	AutoPopulateVariables(query, &variables)
+
 	graphQLRequest := GraphQLRequest{
-		Query: qm.QueryText,
-		Variables: map[string]interface{}{
-			"from":        query.TimeRange.From.UnixMilli(),
-			"to":          query.TimeRange.To.UnixMilli(),
-			"interval_ms": query.Interval.Milliseconds(),
-		},
+		Query:         qm.QueryText,
+		OperationName: qm.OperationName,
+		Variables:     variables,
 	}
 	request, err := graphQLRequest.ToRequest(ctx, d.settings.URL)
 	if err != nil {
