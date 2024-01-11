@@ -142,6 +142,26 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
     editorContext?.updateActiveTabValues({operationName: newOperationName})
     onChange({ ...query, operationName: newOperationName });
   };
+
+  const onDataPathChange = (event: ChangeEvent<HTMLInputElement>) => {
+    // TODO support multiple parsing options
+    onChange({ ...query, parsingOptions: [
+      {
+        dataPath: event.target.value,
+        timePath: query.parsingOptions[0]?.timePath ?? '',
+      }
+    ]})
+  }
+  const onTimePathChange = (event: ChangeEvent<HTMLInputElement>) => {
+    // TODO support multiple parsing options
+    onChange({ ...query, parsingOptions: [
+        {
+          dataPath: query.parsingOptions[0]?.dataPath ?? '',
+          timePath: event.target.value,
+        }
+      ]})
+  }
+
   const currentOperationName = editorContext?.queryEditor?.operationName;
   useEffect(() => {
     // if currentOperationName is null, that means that the query is unnamed
@@ -152,6 +172,9 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
       onChange({ ...query, operationName: currentOperationName ?? undefined });
     }
   }, [onChange, query, currentOperationName]);
+
+
+  // TODO add logic for editing parsing options. Right now we're just relying on the default query to supply a default that works with the default query
 
   return (
     <>
@@ -178,6 +201,20 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
           <InlineField label="Operation Name" labelWidth={32}
                        tooltip="The operationName passed to the GraphQL endpoint. This can be left blank unless you specify multiple queries.">
             <Input onChange={onOperationNameChange} value={query.operationName ?? ''}/>
+          </InlineField>
+        </div>
+        <div className="gf-form-inline">
+          {/*TODO support an arbitrary number of parsing option configurations, rather than just a single one*/}
+          <InlineField label="Data Path" labelWidth={32}
+                       tooltip="Dot-delimited path to an array nested in the root of the JSON response.">
+            <Input onChange={onDataPathChange} value={query.parsingOptions[0]?.dataPath ?? ''}/>
+          </InlineField>
+        </div>
+        <div className="gf-form-inline">
+          {/*TODO support an arbitrary number of parsing option configurations, rather than just a single one*/}
+          <InlineField label="Time Path" labelWidth={32}
+                       tooltip="Dot-delimited path to the time field relative to the data path">
+            <Input onChange={onTimePathChange} value={query.parsingOptions[0]?.timePath ?? ''}/>
           </InlineField>
         </div>
       </div>

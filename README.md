@@ -94,6 +94,13 @@ If you are using VS Code, this is a good read: https://github.com/golang/vscode-
 * `Watchpack Error (watcher): Error: ENOSPC: System limit for number of file watchers reached, watch`
   * https://stackoverflow.com/a/55543310/5434860
 
+### Example repos
+
+Some random examples of data source plugin source code
+
+* https://github.com/grafana/grafana-infinity-datasource/tree/main/pkg
+* https://github.com/cnosdb/grafana-datasource-plugin/blob/main/cnosdb/pkg/plugin/query_model.go
+
 ## Dependency Notes
 
 This section contains notes about dependencies.

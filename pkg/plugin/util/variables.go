@@ -1,4 +1,4 @@
-package plugin
+package util
 
 import "github.com/grafana/grafana-plugin-sdk-go/backend"
 

@@ -23,7 +23,7 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLMainQuery, Wild
       const variables = getQueryVariablesAsJson(target);
       const newVariables: any = { };
       for (const variableName in variables) {
-        newVariables[variableName] = templateSrv.replace(variables[variableName]);
+        newVariables[variableName] = templateSrv.replace(variables[variableName], request.scopedVars);
       }
       return {
         ...target,

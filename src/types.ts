@@ -4,11 +4,19 @@ import { DataQuery } from '@grafana/schema';
 type VariablesType = string | Record<string, any>;
 
 
+export interface ParsingOption {
+  dataPath: string;
+  timePath: string;
+}
+
+
 interface WildGraphQLCommonQuery extends DataQuery {
   queryText: string;
   /** The operation name if explicitly set. Note that an empty string should be treated the same way as an undefined value, although storing an undefined value is preferred.*/
   operationName?: string;
   variables?: VariablesType;
+
+  parsingOptions: ParsingOption[];
 }
 
 export function getQueryVariablesAsJsonString(query: WildGraphQLCommonQuery): string {
@@ -19,7 +27,7 @@ export function getQueryVariablesAsJsonString(query: WildGraphQLCommonQuery): st
   if (typeof variables === 'string') {
     return variables;
   }
-  return JSON.stringify(variables); // TODO consider if we want to prettify this JSON
+  return JSON.stringify(variables, null, 2); // TODO consider allowing customization of size of tabs used
 }
 export function getQueryVariablesAsJson(query: WildGraphQLCommonQuery): Record<string, any> {
   const variables = query.variables;
@@ -49,8 +57,8 @@ export interface WildGraphQLMainQuery extends WildGraphQLCommonQuery {
 
 
 export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
-  queryText: `query BatteryVoltage($from: Long!, $to: Long!) {
-  queryStatus(sourceId: "default", from: $from, to: $to) {
+  queryText: `query BatteryVoltage($sourceId: String!, $from: Long!, $to: Long!) {
+  queryStatus(sourceId: $sourceId, from: $from, to: $to) {
     batteryVoltage {
       dateMillis
       packet {
@@ -60,6 +68,15 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   }
 }
 `,
+  variables: {
+    "sourceId": "default"
+  },
+  parsingOptions: [
+    {
+      dataPath: "queryStatus.batteryVoltage",
+      timePath: "dateMillis"
+    }
+  ]
 };
 
 /**

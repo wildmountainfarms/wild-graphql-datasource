@@ -5,14 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"net/http"
-	"time"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/util"
+	"net/http"
 )
 
 // Make sure Datasource implements required interfaces. This is important to do
@@ -93,7 +91,8 @@ type queryModel struct {
 	// The name of the operation, or a blank string to let the GraphQL server infer the operation name
 	OperationName string `json:"operationName"`
 	// The variables for the operation. May either be a string or a map[string]interface{}
-	Variables interface{} `json:"variables"`
+	Variables      interface{}          `json:"variables"`
+	ParsingOptions []util.ParsingOption `json:"parsingOptions"`
 }
 
 func statusFromResponse(response http.Response) backend.Status {
@@ -110,7 +109,6 @@ func statusFromResponse(response http.Response) backend.Status {
 // In some cases that are never expected to happen, error is returned and the DataResponse is nil.
 // In these cases, you can assume that something is seriously wrong, as we didn't intend to recover from that specific situation.
 func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) (*backend.DataResponse, error) {
-	var response backend.DataResponse
 
 	log.DefaultLogger.Info(fmt.Sprintf("JSON is: %s", query.JSON))
 
@@ -146,7 +144,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 
 		err := json.Unmarshal([]byte(value), &variables)
 		if err != nil {
-			log.DefaultLogger.Error(fmt.Sprintf("Got error while parsing variables! Error: %s", err.Error()))
+			log.DefaultLogger.Error("Got error while parsing variables! Error", err)
 			log.DefaultLogger.Info(fmt.Sprintf("Value of variables from parsing error is: %s", value))
 
 			// continue executing query without interpolated variables
@@ -161,9 +159,9 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 	default:
 		log.DefaultLogger.Error("Unable to parse variables for ref ID:" + query.RefID)
 	}
-	AutoPopulateVariables(query, &variables)
+	util.AutoPopulateVariables(query, &variables)
 
-	graphQLRequest := GraphQLRequest{
+	graphQLRequest := util.GraphQLRequest{
 		Query:         qm.QueryText,
 		OperationName: qm.OperationName,
 		Variables:     variables,
@@ -185,7 +183,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 	}
 	status := statusFromResponse(*resp)
 
-	graphQLResponse, responseParseError := ParseGraphQLResponse(resp.Body)
+	graphQLResponse, responseParseError := util.ParseGraphQLResponse(resp.Body)
 	if responseParseError != nil {
 		return &backend.DataResponse{
 			Error:  err,
@@ -212,27 +210,27 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 		}, nil
 	}
 
-	dataBytes, serializeError := json.Marshal(graphQLResponse.Data)
-	if serializeError != nil {
-		return nil, serializeError // this should not happen
-	}
+	//dataBytes, serializeError := json.Marshal(graphQLResponse.Data)
+	//if serializeError != nil {
+	//	return nil, serializeError // this should not happen
+	//}
+	//log.DefaultLogger.Info(fmt.Sprintf("result is: %s", dataBytes))
 
-	log.DefaultLogger.Info("Successful query!")
-	log.DefaultLogger.Info(fmt.Sprintf("result is: %s", dataBytes))
+	log.DefaultLogger.Debug("Successful query!")
 
-	// create data frame response.
-	// For an overview on data frames and how grafana handles them:
-	// https://grafana.com/developers/plugin-tools/introduction/data-frames
-	frame := data.NewFrame("response")
-
-	// add fields.
-	frame.Fields = append(frame.Fields,
-		data.NewField("time", nil, []time.Time{query.TimeRange.From, query.TimeRange.To}),
-		data.NewField("values", nil, []int64{10, 20}),
-	)
+	var response backend.DataResponse
 
 	// add the frames to the response.
-	response.Frames = append(response.Frames, frame)
+	for _, parsingOption := range qm.ParsingOptions {
+		frame, err := util.ParseData(
+			graphQLResponse.Data,
+			parsingOption,
+		)
+		if err != nil {
+			return nil, err
+		}
+		response.Frames = append(response.Frames, frame)
+	}
 
 	return &response, nil
 }
@@ -244,7 +242,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	// test command to do the same thing:
 	//   curl -X POST -H "Content-Type: application/json" -d '{"query":"{\n\t\t  __schema{\n\t\t\tqueryType{name}\n\t\t  }\n\t\t}"}' https://swapi-graphql.netlify.app/.netlify/functions/index
-	graphQLRequest := GraphQLRequest{
+	graphQLRequest := util.GraphQLRequest{
 		Query: `{
 		  __schema{
 		    queryType{name}
@@ -262,7 +260,7 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return nil, err
 	}
 
-	graphQLResponse, responseParseError := ParseGraphQLResponse(resp.Body)
+	graphQLResponse, responseParseError := util.ParseGraphQLResponse(resp.Body)
 	if responseParseError != nil {
 		if resp.StatusCode == 200 {
 			return &backend.CheckHealthResult{
