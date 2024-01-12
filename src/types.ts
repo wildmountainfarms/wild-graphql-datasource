@@ -61,8 +61,15 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   queryStatus(sourceId: $sourceId, from: $from, to: $to) {
     batteryVoltage {
       dateMillis
+      fragmentId
       packet {
         batteryVoltage
+        identifier {
+          representation
+        }
+        identityInfo {
+          displayName
+        }
       }
     }
   }
@@ -71,6 +78,26 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   variables: {
     "sourceId": "default"
   },
+  parsingOptions: [
+    {
+      dataPath: "queryStatus.batteryVoltage",
+      timePath: "dateMillis"
+    }
+  ]
+};
+
+export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
+  queryText: `query BatteryVoltage($from: Long!, $to: Long!) {
+  queryStatus(sourceId: "default", from: $from, to: $to) {
+    batteryVoltage {
+      dateMillis
+      packet {
+        batteryVoltage
+      }
+    }
+  }
+}
+`,
   parsingOptions: [
     {
       dataPath: "queryStatus.batteryVoltage",

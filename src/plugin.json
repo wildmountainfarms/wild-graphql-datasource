@@ -5,11 +5,12 @@
   "id": "wildmountainfarms-wildgraphql-datasource",
   "metrics": true,
   "backend": true,
+  "alerting": true,
   "executable": "gpx_wild_graphql_datasource",
   "info": {
     "description": "Grafana datasource to interpret GraphQL query results as timeseries data",
     "author": {
-      "name": "wildmountainfarms"
+      "name": "Lavender Shannon"
     },
     "keywords": ["datasource"],
     "logos": {

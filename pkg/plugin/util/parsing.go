@@ -76,6 +76,8 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption Parsing
 				switch valueValue := value.(type) {
 				case string:
 					// TODO allow user to customize time format
+					// Look at https://stackoverflow.com/questions/522251/whats-the-difference-between-iso-8601-and-rfc-3339-date-formats
+					//   and also consider using time.RFC339Nano instead
 					parsedTime, err := time.Parse(time.RFC3339, valueValue)
 					if err != nil {
 						return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", valueValue))

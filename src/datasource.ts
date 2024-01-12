@@ -2,7 +2,13 @@ import {CoreApp, DataQueryRequest, DataQueryResponse, DataSourceInstanceSettings
 import {DataSourceWithBackend, getTemplateSrv} from '@grafana/runtime';
 import {Observable} from 'rxjs';
 
-import {DEFAULT_QUERY, getQueryVariablesAsJson, WildGraphQLDataSourceOptions, WildGraphQLMainQuery} from './types';
+import {
+  DEFAULT_ALERTING_QUERY,
+  DEFAULT_QUERY,
+  getQueryVariablesAsJson,
+  WildGraphQLDataSourceOptions,
+  WildGraphQLMainQuery
+} from './types';
 
 export class DataSource extends DataSourceWithBackend<WildGraphQLMainQuery, WildGraphQLDataSourceOptions> {
   settings: DataSourceInstanceSettings<WildGraphQLDataSourceOptions>;
@@ -12,7 +18,12 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLMainQuery, Wild
     this.settings = instanceSettings;
   }
 
-  getDefaultQuery(_: CoreApp): Partial<WildGraphQLMainQuery> {
+  getDefaultQuery(app: CoreApp): Partial<WildGraphQLMainQuery> {
+    if (app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting) {
+      // we have a different default query for alerts because alerts only support returning time and value columns.
+      //   Additional columns in the data frame will return in an "input data must be a wide series" error.
+      return DEFAULT_ALERTING_QUERY;
+    }
     return DEFAULT_QUERY;
   }
   query(request: DataQueryRequest<WildGraphQLMainQuery>): Observable<DataQueryResponse> {

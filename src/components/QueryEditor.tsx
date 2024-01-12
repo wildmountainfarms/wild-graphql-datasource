@@ -52,6 +52,9 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
     headers['Authorization'] = basicAuth;
   }
   const backendSrv = getBackendSrv();
+  // NOTE: getTemplateSrv() is something that is only updated after a query is performed on a Grafana dashboard.
+  //   If you navigate straight to "Alert rules", for example, getTemplateSrv() will not be able to replace $__to and $__from variables.
+  //   This has the implication that the "Execute query" button performs a query with "to" and "from" variables that are unlike what is actually configured.
   const templateSrv = getTemplateSrv();
   return async (graphQLParams: FetcherParams, opts?: FetcherOpts) => {
     const variables = {
@@ -68,6 +71,7 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
       ...graphQLParams,
       variables: variables
     };
+    console.log(query);
     const observable = backendSrv.fetch({
       url,
       headers,
