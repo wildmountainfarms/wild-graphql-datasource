@@ -6,6 +6,7 @@
   "metrics": true,
   "backend": true,
   "alerting": true,
+  "annotations": true,
   "executable": "gpx_wild_graphql_datasource",
   "info": {
     "description": "Grafana datasource to interpret GraphQL query results as timeseries data",

@@ -2,7 +2,7 @@ import React, {ChangeEvent, useEffect, useMemo} from 'react';
 import {InlineField, Input} from '@grafana/ui';
 import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
-import {getQueryVariablesAsJsonString, WildGraphQLDataSourceOptions, WildGraphQLMainQuery} from '../types';
+import {getQueryVariablesAsJsonString, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions} from '../types';
 import {GraphiQLInterface} from 'graphiql';
 import {
   EditorContextProvider,
@@ -23,7 +23,7 @@ import {ExecutionResult} from "graphql-ws";
 import {AUTO_POPULATED_VARIABLES} from "../variables";
 
 
-type Props = QueryEditorProps<DataSource, WildGraphQLMainQuery, WildGraphQLDataSourceOptions>;
+type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
 
 /**
  * This fetcher is designed to be used only for fetching the schema of a GraphQL endpoint.
@@ -55,6 +55,7 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
   return async (graphQLParams: FetcherParams, opts?: FetcherOpts) => {
     const variables = {
       ...graphQLParams.variables, // TODO warn user if we are overriding their variables with the autopopulated ones
+      // TODO also consider if we want to override user variables
       ...AUTO_POPULATED_VARIABLES,
     };
     for (const field in variables) {

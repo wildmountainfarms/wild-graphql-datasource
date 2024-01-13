@@ -14,6 +14,7 @@ import {getTemplateSrv} from "@grafana/runtime";
  * Remember THE VALUES HERE ARE NOT USED BY THE BACKEND AND ARE ONLY USED FOR DEBUGGING QUERIES IN THE FRONTEND BY THE RUN BUTTON.
  */
 export const AUTO_POPULATED_VARIABLES: Record<string, any> = {
+  // TODO pass these values as numbers after interpolating them
   "from": "$__from",
   "to": "$__to",
   "interval_ms": "$__interval_ms",

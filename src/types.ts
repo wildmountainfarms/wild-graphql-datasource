@@ -6,7 +6,11 @@ type VariablesType = string | Record<string, any>;
 
 export interface ParsingOption {
   dataPath: string;
+  /** Required. The path to the time (this represents the "start time" in the case when {@link timeEndPath} is defined) */
   timePath: string;
+  // TODO use timeEndPath on the backend
+  /** Optional. The path to the "end time". Should only be shown for the annotation query. A blank string should be treated the same as undefined*/
+  timeEndPath?: string;
 }
 
 
@@ -55,6 +59,27 @@ export function getQueryVariablesAsJson(query: WildGraphQLCommonQuery): Record<s
 export interface WildGraphQLMainQuery extends WildGraphQLCommonQuery {
 }
 
+export interface WildGraphQLAnnotationQuery extends WildGraphQLCommonQuery {
+}
+
+/** This type represents the possible options that can be stored in the datasource JSON for queries */
+export type WildGraphQLAnyQuery = (WildGraphQLMainQuery | WildGraphQLAnnotationQuery) &
+  Partial<WildGraphQLMainQuery> &
+  Partial<WildGraphQLAnnotationQuery>;
+
+
+/**
+ * These are options configured for each DataSource instance
+ */
+export interface WildGraphQLDataSourceOptions extends DataSourceJsonData {
+}
+
+/**
+ * Value that is used in the backend, but never sent over HTTP to the frontend
+ */
+export interface WildGraphQLSecureJsonData {
+  // TODO We should support secret fields that can be passed to GraphQL queries as arguments
+}
 
 export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   queryText: `query BatteryVoltage($sourceId: String!, $from: Long!, $to: Long!) {
@@ -106,15 +131,22 @@ export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
   ]
 };
 
-/**
- * These are options configured for each DataSource instance
- */
-export interface WildGraphQLDataSourceOptions extends DataSourceJsonData {
+export const DEFAULT_ANNOTATION_QUERY: Partial<WildGraphQLAnnotationQuery> = {
+  queryText: `query BatteryVoltage($from: Long!, $to: Long!) {
+  queryEvent(from:$from, to:$to) {
+    mateCommand {
+      dateMillis
+      packet {
+        commandName
+      }
+    }
+  }
 }
-
-/**
- * Value that is used in the backend, but never sent over HTTP to the frontend
- */
-export interface WildGraphQLSecureJsonData {
-  // TODO We should support secret fields that can be passed to GraphQL queries as arguments
-}
+`,
+  parsingOptions: [
+    {
+      dataPath: "queryEvent.mateCommand",
+      timePath: "dateMillis"
+    }
+  ]
+};
