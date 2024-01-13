@@ -1,0 +1,16 @@
+
+
+/*Hide the GraphiQL execute button only if one of its parents has the hide-execute-button class */
+.hide-execute-button .graphiql-execute-button {
+  display: none;
+}
+
+
+/*
+Hide the response window only if one if its parents has the hide-execute-button class
+.graphiql-response ~ :not(.graphiql-response)
+  selects the parent of any div with the graphiql-response class
+*/
+.hide-execute-button div:has(> .graphiql-response) {
+  display: none !important; /* Important is necessary because the div element we are trying to select explicitly has its display set to flex*/
+}

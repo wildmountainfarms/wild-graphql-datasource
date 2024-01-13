@@ -1,6 +1,6 @@
 import React, {ChangeEvent, useEffect, useMemo} from 'react';
 import {InlineField, Input} from '@grafana/ui';
-import {QueryEditorProps} from '@grafana/data';
+import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
 import {getQueryVariablesAsJsonString, WildGraphQLDataSourceOptions, WildGraphQLMainQuery} from '../types';
 import {GraphiQLInterface} from 'graphiql';
@@ -18,13 +18,9 @@ import {getBackendSrv, getTemplateSrv} from "@grafana/runtime";
 import {firstValueFrom} from 'rxjs';
 
 import 'graphiql/graphiql.css';
+import './modify_graphiql.css'
 import {ExecutionResult} from "graphql-ws";
 import {AUTO_POPULATED_VARIABLES} from "../variables";
-
-// import '@graphiql/react/dist/style.css';
-// import '@graphiql/react/font/roboto.css';
-// import '@graphiql/react/font/fira-code.css';
-
 
 
 type Props = QueryEditorProps<DataSource, WildGraphQLMainQuery, WildGraphQLDataSourceOptions>;
@@ -88,6 +84,7 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
 
 export function QueryEditor(props: Props) {
   const { query, datasource } = props;
+  const isAlerting = props.app === CoreApp.CloudAlerting || props.app === CoreApp.UnifiedAlerting;
 
   const fetcher = useMemo(() => {
     return createFetcher(
@@ -119,9 +116,12 @@ export function QueryEditor(props: Props) {
           >
             <ExplorerContextProvider> {/*Explorer context needed for documentation*/}
               <PluginContextProvider>
-                <InnerQueryEditor
-                  {...props}
-                />
+                {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
+                <div className={isAlerting ? "hide-execute-button" : ""}>
+                  <InnerQueryEditor
+                    {...props}
+                  />
+                </div>
               </PluginContextProvider>
             </ExplorerContextProvider>
           </ExecutionContextProvider>
