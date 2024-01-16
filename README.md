@@ -8,6 +8,15 @@ This datasource tries to reimagine how GraphQL queries should be made from Grafa
 
 Requests are made in the backend. Results are consistent between queries and alerting.
 
+## Features
+
+* Complex GraphQL responses can be turned into timeseries data, or a simple table
+* Includes [GraphiQL](https://github.com/graphql/graphiql) query editor. Autocompletion and documentation for the GraphQL schema available inside Grafana!
+* This is a backend plugin, so alerting is supported
+* `from` and `to` variables are given to the query via [native GraphQL variables](https://graphql.org/learn/queries/#variables)
+* Variables section of the query editor supports interpolation of string values using [Grafana variables](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/). (\*not supported in alerting or other backend-only queries)
+* [Annotation support](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
+
 
 ## Variables
 
@@ -15,11 +24,13 @@ Requests are made in the backend. Results are consistent between queries and ale
 
 Certain variables are provided to every query. These include:
 
-| Variable      | Type   | Description                                                | Grafana counterpart                                                                                                |
-|---------------|--------|------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| `from`        | Number | Epoch milliseconds of the "from" time. Passed as a number. | [$__from](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)    |
-| `to`          | Number | Epoch milliseconds of the "to" time. Passed as a number.   | [$__to](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)      |
-| `interval_ms` | Number | Milliseconds of the interval. Equivalent to `to - from`.   | [$__interval_ms](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__interval)  |
+| Variable        | Type   | Description                                                                    | Grafana counterpart                                                                                               |
+|-----------------|--------|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| `from`          | Number | Epoch milliseconds of the "from" time                                          | [$__from](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)   |
+| `to`            | Number | Epoch milliseconds of the "to" time                                            | [$__to](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)     |
+| `interval_ms`   | Number | The suggested duration between time points in a time series query              | [$__interval_ms](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__interval) |
+| `maxDataPoints` | Number | Maximum number of data points that should be returned from a time series query | N/A                                                                                                               |
+| `refId`         | String | Unique identifier of the query, set by the frontend call                       | N/A                                                                                                               |
 
 An example usage is shown in the most basic query:
 
@@ -106,22 +117,3 @@ References:
   * This error indicates that the query returns more fields than just the time and the datapoint.
   * For alerts, the response from the GraphQL query cannot contain more than the time and datapoint. At this time, you cannot use other attributes from the result to filter the data.
 
-## To-Do
-
-* Add ability to have multiple parsing options
-  * Add "advanced options" section that has "Partition by" and "Alias by"
-    * Including these might be necessary as you may want to partition by and alias by different things for different parts of a GraphQL query
-    * Advances options can also include the ability to add custom labels to the response - this allows different parsing options to be distinguished by Grafana
-* Add support for secure variable data defined in the data source configuration
-  * The variables defined here cannot be overridden for any request - this is for security
-  * Also add support for secure HTTP headers
-* See what minimum Grafana version we can support
-* Add support for variables: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-support-for-variables
-* Add metrics to backend component: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins#implement-metrics-in-your-plugin
-* Support returning logs data: https://grafana.com/developers/plugin-tools/tutorials/build-a-logs-data-source-plugin
-  * We could just add `"logs": true` to `plugin.json`, however we need to support the renaming of fields because sometimes the `body` or `timestamp` fields will be nested
-* Publish as a plugin
-  * https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin
-  * https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
-  * https://grafana.com/legal/plugins/
-  * https://grafana.com/developers/plugin-tools/publish-a-plugin/provide-test-environment

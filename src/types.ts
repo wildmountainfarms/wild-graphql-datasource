@@ -43,8 +43,9 @@ export function getQueryVariablesAsJson(query: WildGraphQLCommonQuery): Record<s
       return JSON.parse(variables);
     } catch (e) {
       if (e instanceof SyntaxError) {
+        console.error("Got a syntax error while parsing variables!", e);
+        console.log("Variables is", variables);
         return {}; // in the case of a syntax error, let's just make it so variables are not included
-        // TODO consider logging an error here or something
       } else {
         throw e; // unexpected exception
       }

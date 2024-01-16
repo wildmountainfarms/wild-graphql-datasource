@@ -2,15 +2,15 @@ version: '3.0'
 
 services:
   grafana:
-    container_name: 'wildmountainfarms-wildgraphql-datasource'
+    container_name: 'grafana-dev-wildgraphql'
     platform: 'linux/amd64'
     build:
       context: ./.config
       args:
-        grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
-        grafana_version: ${GRAFANA_VERSION:-10.0.3}
+        grafana_image: ${GRAFANA_IMAGE:-grafana-oss}
+        grafana_version: ${GRAFANA_VERSION:-10.0.10}
     ports:
       - 3000:3000/tcp
     volumes:
-      - ./dist:/var/lib/grafana/plugins/wildmountainfarms-wildgraphql-datasource
+      - ./dist:/var/lib/grafana/plugins/retrodaredevil-wildgraphql-datasource
       - ./provisioning:/etc/grafana/provisioning

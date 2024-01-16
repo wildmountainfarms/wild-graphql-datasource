@@ -20,7 +20,7 @@ import {firstValueFrom} from 'rxjs';
 import 'graphiql/graphiql.css';
 import './modify_graphiql.css'
 import {ExecutionResult} from "graphql-ws";
-import {AUTO_POPULATED_VARIABLES} from "../variables";
+import {getInterpolatedAutoPopulatedVariables, interpolateVariables} from "../variables";
 
 
 type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
@@ -54,16 +54,9 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
   const templateSrv = getTemplateSrv();
   return async (graphQLParams: FetcherParams, opts?: FetcherOpts) => {
     const variables = {
-      ...graphQLParams.variables, // TODO warn user if we are overriding their variables with the autopopulated ones
-      // TODO also consider if we want to override user variables
-      ...AUTO_POPULATED_VARIABLES,
+      ...getInterpolatedAutoPopulatedVariables(templateSrv),
+      ...interpolateVariables(graphQLParams.variables, templateSrv), // remember one of the downsides here is that we cannot pass scopedVars here because we don't have access to it
     };
-    for (const field in variables) {
-      const value = variables[field];
-      if (typeof value === 'string') {
-        variables[field] = templateSrv.replace(value);
-      }
-    }
     const query = {
       ...graphQLParams,
       variables: variables
@@ -75,7 +68,7 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
       method: "POST",
       data: query,
       responseType: "json",
-      // TODO consider other options available here
+      // NOTE: Other options may be necessary here, but at the time of writing I have not tested the different scenarios that might warrant a need to alter these parameters
     });
     // awaiting the observable may throw an exception, and that's OK, we can let that propagate up
     const response = await firstValueFrom(observable);
@@ -179,13 +172,12 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
   }, [onChange, query, currentOperationName]);
 
 
-  // TODO add logic for editing parsing options. Right now we're just relying on the default query to supply a default that works with the default query
-
   return (
     <>
       <h3 className="page-heading">Query</h3>
       <div className="gf-form-group">
         <div className="gf-form" style={{height: "450px"}}>
+          {/*TODO allow this to be resized*/}
           <GraphiQLInterface
             showPersistHeadersSettings={false}
             disableTabs={true}

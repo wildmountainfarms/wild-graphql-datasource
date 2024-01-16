@@ -9,7 +9,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/util"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/queryvariables"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/graphql"
 	"net/http"
 )
 
@@ -85,16 +88,6 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	return response, nil
 }
 
-// queryModel represents data sent from the frontend to perform a query
-type queryModel struct {
-	QueryText string `json:"queryText"`
-	// The name of the operation, or a blank string to let the GraphQL server infer the operation name
-	OperationName string `json:"operationName"`
-	// The variables for the operation. May either be a string or a map[string]interface{}
-	Variables      interface{}          `json:"variables"`
-	ParsingOptions []util.ParsingOption `json:"parsingOptions"`
-}
-
 func statusFromResponse(response http.Response) backend.Status {
 	for _, status := range []backend.Status{} {
 		if response.StatusCode == int(status) {
@@ -112,8 +105,8 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 
 	log.DefaultLogger.Info(fmt.Sprintf("JSON is: %s", query.JSON))
 
-	// Unmarshal the JSON into our queryModel.
-	var qm queryModel
+	// Unmarshal the JSON into our QueryModel.
+	var qm querymodel.QueryModel
 
 	err := json.Unmarshal(query.JSON, &qm)
 	if err != nil {
@@ -128,40 +121,10 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 	}
 	log.DefaultLogger.Info("Query text is: " + qm.QueryText)
 
-	// Although the frontend has access to global variable substitution (https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#global-variables)
-	//   the backend does not.
-	//   Because of this, it's beneficial to encourage users to write queries that rely as little on the frontend as possible.
-	//   This allows us to support alerting later.
-	//   These variable names that we are "hard coding" should be as similar to possible as those global variables that are available
-	//   Forum post here: https://community.grafana.com/t/how-to-use-template-variables-in-your-data-source/63250#backend-data-sources-3
-	//   More information here: https://grafana.com/docs/grafana/latest/dashboards/variables/
+	// use later: pCtx.AppInstanceSettings.DecryptedSecureJSONData
+	variables, _ := queryvariables.ParseVariables(query, qm.Variables)
 
-	var variables = map[string]interface{}{}
-	switch value := qm.Variables.(type) {
-	case string:
-		// This case happens when the frontend is not involved at all. This is likely an alert.
-		// Remember that these variables are not interpolated
-
-		err := json.Unmarshal([]byte(value), &variables)
-		if err != nil {
-			log.DefaultLogger.Error("Got error while parsing variables! Error", err)
-			log.DefaultLogger.Info(fmt.Sprintf("Value of variables from parsing error is: %s", value))
-
-			// continue executing query without interpolated variables
-			// TODO consider if we want a flag in the options to prevent the query from continuing further in the case of an error
-		}
-	case map[string]interface{}:
-		// This case happens when the frontend is able to interpolate the variables before passing them to us
-		//   or happens when someone has directly configured the variables option in the JSON itself
-		//   and storing it as an object rather than a string like the QueryEditor does.
-		//   If this is the ladder case, variables have not been interpolated
-		variables = value
-	default:
-		log.DefaultLogger.Error("Unable to parse variables for ref ID:" + query.RefID)
-	}
-	util.AutoPopulateVariables(query, &variables)
-
-	graphQLRequest := util.GraphQLRequest{
+	graphQLRequest := graphql.GraphQLRequest{
 		Query:         qm.QueryText,
 		OperationName: qm.OperationName,
 		Variables:     variables,
@@ -183,7 +146,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 	}
 	status := statusFromResponse(*resp)
 
-	graphQLResponse, responseParseError := util.ParseGraphQLResponse(resp.Body)
+	graphQLResponse, responseParseError := graphql.ParseGraphQLResponse(resp.Body)
 	if responseParseError != nil {
 		return &backend.DataResponse{
 			Error:  err,
@@ -222,7 +185,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 
 	// add the frames to the response.
 	for _, parsingOption := range qm.ParsingOptions {
-		frame, err := util.ParseData(
+		frame, err := parsing.ParseData(
 			graphQLResponse.Data,
 			parsingOption,
 		)
@@ -242,7 +205,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	// test command to do the same thing:
 	//   curl -X POST -H "Content-Type: application/json" -d '{"query":"{\n\t\t  __schema{\n\t\t\tqueryType{name}\n\t\t  }\n\t\t}"}' https://swapi-graphql.netlify.app/.netlify/functions/index
-	graphQLRequest := util.GraphQLRequest{
+	graphQLRequest := graphql.GraphQLRequest{
 		Query: `{
 		  __schema{
 		    queryType{name}
@@ -260,7 +223,7 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return nil, err
 	}
 
-	graphQLResponse, responseParseError := util.ParseGraphQLResponse(resp.Body)
+	graphQLResponse, responseParseError := graphql.ParseGraphQLResponse(resp.Body)
 	if responseParseError != nil {
 		if resp.StatusCode == 200 {
 			return &backend.CheckHealthResult{

@@ -103,3 +103,30 @@ This section contains notes about dependencies.
   * https://github.com/graphql/graphiql/issues/2405#issuecomment-1469851608 (yes as of writing it says it's closed, but it's not)
   * It's not a bad thing that we include this dependency because it gives us a couple of types that we end up using
 
+
+## To-Do
+
+* Queries that result in errors should display nice errors messages on the frontend
+* Add ability to have multiple parsing options
+  * Add "advanced options" section that has "Partition by" and "Alias by"
+    * Including these might be necessary as you may want to partition by and alias by different things for different parts of a GraphQL query
+    * Advances options can also include the ability to add custom labels to the response - this allows different parsing options to be distinguished by Grafana
+* Add support for secure variable data defined in the data source configuration
+  * The variables defined here cannot be overridden for any request - this is for security
+  * Also add support for secure HTTP headers
+* See what minimum Grafana version we can support
+* Add support for variables: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-support-for-variables
+* Add metrics to backend component: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins#implement-metrics-in-your-plugin
+* Support returning logs data: https://grafana.com/developers/plugin-tools/tutorials/build-a-logs-data-source-plugin
+  * We could just add `"logs": true` to `plugin.json`, however we need to support the renaming of fields because sometimes the `body` or `timestamp` fields will be nested
+* Publish as a plugin
+  * https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin
+  * https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
+  * https://grafana.com/legal/plugins/
+  * https://grafana.com/developers/plugin-tools/publish-a-plugin/provide-test-environment
+* Publish on a private plugin repository
+  * https://volkovlabs.io/blog/installing-grafana-plugins-from-a-private-repository-805b54a1add3/
+* Create a GraphQL button panel (or a SolarThing app) that has a button panel that can be used to
+  * If we create an app, we can follow https://github.com/RedisGrafana/grafana-redis-app
+    * https://github.com/RedisGrafana/grafana-redis-app/blob/e093d18a021bb28ba7df3a54d7ad17c2d8e38f88/src/redis-gears-panel/components/RedisGearsPanel/RedisGearsPanel.tsx#L314
+* Auto-populate the data path field by using `documentAST` to recognize the first path to an array

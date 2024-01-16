@@ -1,9 +1,10 @@
-package util
+package parsing
 
 import (
 	"errors"
 	"fmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
 	"reflect"
 	"strings"
 	"time"
@@ -11,14 +12,7 @@ import (
 
 // the purpose of this file is to parse JSON data with configuration from a ParsingOption
 
-type ParsingOption struct {
-	// The path from the root to the array. This is dot-delimited
-	DataPath string `json:"dataPath"`
-	// the time path relative to the data path.
-	TimePath string `json:"timePath"`
-}
-
-func ParseData(graphQlResponseData map[string]interface{}, parsingOption ParsingOption) (*data.Frame, error) {
+func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymodel.ParsingOption) (*data.Frame, error) {
 	if len(parsingOption.DataPath) == 0 {
 		return nil, errors.New("data path cannot be empty")
 	}

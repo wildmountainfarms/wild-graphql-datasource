@@ -15,6 +15,7 @@ import {
   WildGraphQLAnyQuery,
   WildGraphQLDataSourceOptions, WildGraphQLMainQuery
 } from './types';
+import {interpolateVariables} from "./variables";
 
 export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildGraphQLDataSourceOptions> {
   settings: DataSourceInstanceSettings<WildGraphQLDataSourceOptions>;
@@ -47,10 +48,7 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildG
     const templateSrv = getTemplateSrv();
     const newTargets: WildGraphQLAnyQuery[] = request.targets.map((target) => {
       const variables = getQueryVariablesAsJson(target);
-      const newVariables: any = { };
-      for (const variableName in variables) {
-        newVariables[variableName] = templateSrv.replace(variables[variableName], request.scopedVars);
-      }
+      const newVariables = interpolateVariables(variables, templateSrv, request.scopedVars);
       return {
         ...target,
         variables: newVariables,
