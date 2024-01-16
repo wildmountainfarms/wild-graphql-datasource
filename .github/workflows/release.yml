@@ -10,11 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      # https://github.com/grafana/plugin-actions/blob/main/build-plugin/README.md
+      # https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
       - uses: grafana/plugin-actions/build-plugin@release
-        # uncomment to enable plugin sign in
-        #with:
-        # see https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token to generate it
-        # save the value in your repository secrets
-        #policy_token: $
-        #usage of GRAFANA_API_KEY is deprecated prefer policy_token
-        #grafana_token: $
+        with:
+          policy_token: ${{ secrets.GRAFANA_ACCESS_POLICY_TOKEN }}
