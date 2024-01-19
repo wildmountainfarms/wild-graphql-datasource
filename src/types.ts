@@ -11,6 +11,8 @@ export interface ParsingOption {
   // TODO use timeEndPath on the backend
   /** Optional. The path to the "end time". Should only be shown for the annotation query. A blank string should be treated the same as undefined*/
   timeEndPath?: string;
+  // TODO add group by and way to create labels with values of particular fields
+  //   Label names must be consistent between parsing options
 }
 
 
