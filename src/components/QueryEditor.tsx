@@ -1,8 +1,13 @@
 import React, {ChangeEvent, useEffect, useMemo} from 'react';
-import {InlineField, Input} from '@grafana/ui';
+import {Button, IconButton, InlineField, Input} from '@grafana/ui';
 import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
-import {getQueryVariablesAsJsonString, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions} from '../types';
+import {
+  getQueryVariablesAsJsonString,
+  ParsingOption,
+  WildGraphQLAnyQuery,
+  WildGraphQLDataSourceOptions
+} from '../types';
 import {GraphiQLInterface} from 'graphiql';
 import {
   EditorContextProvider,
@@ -24,6 +29,9 @@ import {getInterpolatedAutoPopulatedVariables, interpolateVariables} from "../va
 
 
 type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
+
+const LABEL_WIDTH = 24;
+const INPUT_WIDTH = 48;
 
 /**
  * This fetcher is designed to be used only for fetching the schema of a GraphQL endpoint.
@@ -141,24 +149,40 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
     onChange({ ...query, operationName: newOperationName });
   };
 
-  const onDataPathChange = (event: ChangeEvent<HTMLInputElement>) => {
-    // TODO support multiple parsing options
-    onChange({ ...query, parsingOptions: [
-      {
-        dataPath: event.target.value,
-        timePath: query.parsingOptions[0]?.timePath ?? '',
-      }
-    ]})
-  }
-  const onTimePathChange = (event: ChangeEvent<HTMLInputElement>) => {
-    // TODO support multiple parsing options
-    onChange({ ...query, parsingOptions: [
-        {
-          dataPath: query.parsingOptions[0]?.dataPath ?? '',
-          timePath: event.target.value,
+  const onParsingOptionChange = (event: React.FormEvent<HTMLInputElement>, field: keyof ParsingOption, editedIndex: number) => {
+    onChange({
+      ...query,
+      parsingOptions: query.parsingOptions.map((parsingOption, index) => index === editedIndex
+        ? {
+          ...parsingOption,
+          [field]: event.currentTarget.value,
         }
-      ]})
-  }
+        : parsingOption
+      )
+    });
+  };
+
+  const deleteParsingOption = (index: number) => {
+    const newParsingOptions: ParsingOption[] = [];
+    newParsingOptions.push(...query.parsingOptions.slice(0, index));
+    newParsingOptions.push(...query.parsingOptions.slice(index + 1, query.parsingOptions.length));
+    onChange({
+      ...query,
+      parsingOptions: newParsingOptions,
+    })
+  };
+  const newParsingOption = () => {
+    const newParsingOptions = [...query.parsingOptions];
+    const timePath = query.parsingOptions.length === 0 ? "time.path" : query.parsingOptions[query.parsingOptions.length - 1].timePath;
+    newParsingOptions.push({
+      "dataPath": "data.path",
+      "timePath": timePath,
+    })
+    onChange({
+      ...query,
+      parsingOptions: newParsingOptions,
+    })
+  };
 
   const currentOperationName = editorContext?.queryEditor?.operationName;
   useEffect(() => {
@@ -195,25 +219,53 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
           />
         </div>
         <div className="gf-form-inline">
-          <InlineField label="Operation Name" labelWidth={32}
+          <InlineField label="Operation Name" labelWidth={LABEL_WIDTH}
                        tooltip="The operationName passed to the GraphQL endpoint. This can be left blank unless you specify multiple queries.">
-            <Input onChange={onOperationNameChange} value={query.operationName ?? ''}/>
+            <Input
+              onChange={onOperationNameChange} value={query.operationName ?? ''}
+              width={INPUT_WIDTH}
+            />
           </InlineField>
         </div>
-        <div className="gf-form-inline">
-          {/*TODO support an arbitrary number of parsing option configurations, rather than just a single one*/}
-          <InlineField label="Data Path" labelWidth={32}
-                       tooltip="Dot-delimited path to an array nested in the root of the JSON response.">
-            <Input onChange={onDataPathChange} value={query.parsingOptions[0]?.dataPath ?? ''}/>
-          </InlineField>
-        </div>
-        <div className="gf-form-inline">
-          {/*TODO support an arbitrary number of parsing option configurations, rather than just a single one*/}
-          <InlineField label="Time Path" labelWidth={32}
-                       tooltip="Dot-delimited path to the time field relative to the data path">
-            <Input onChange={onTimePathChange} value={query.parsingOptions[0]?.timePath ?? ''}/>
-          </InlineField>
-        </div>
+        {query.parsingOptions.map((parsingOption, index) => <>
+          <div className="gf-form-inline" style={{marginTop: "1em"}}>
+            <InlineField label={`Parsing Option ${index + 1}`} labelWidth={LABEL_WIDTH}>
+              <div></div>
+            </InlineField>
+            {query.parsingOptions.length === 1
+              ? null
+              : <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(index)}/>
+            }
+          </div>
+          <div className="gf-form-inline">
+            <InlineField label="Data Path" labelWidth={LABEL_WIDTH}
+                         tooltip="Dot-delimited path to an array nested in the root of the JSON response.">
+              <Input
+                onChange={event => onParsingOptionChange(event, "dataPath", index)}
+                value={parsingOption.dataPath ?? ''}
+                width={INPUT_WIDTH}/>
+            </InlineField>
+          </div>
+          <div className="gf-form-inline">
+            <InlineField label="Time Path" labelWidth={LABEL_WIDTH}
+                         tooltip="Dot-delimited path to the time field relative to the data path">
+              <Input
+                onChange={event => onParsingOptionChange(event, "timePath", index)}
+                value={parsingOption.timePath ?? ''}
+                width={INPUT_WIDTH}/>
+            </InlineField>
+          </div>
+        </>)}
+
+        {/*https://developers.grafana.com/ui/latest/index.html?path=/docs/buttons-button--examples*/}
+        {/*https://grafana.com/developers/saga/Components/Buttons/Button*/}
+        <Button
+          variant="secondary"
+          style={{marginTop: "1em"}}
+          onClick={() => newParsingOption()}
+        >
+          Add Parsing Option
+        </Button>
       </div>
     </>
   );
