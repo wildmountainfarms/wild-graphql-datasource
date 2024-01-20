@@ -1,9 +1,11 @@
-import React, {ChangeEvent, useEffect, useMemo} from 'react';
-import {Button, IconButton, InlineField, Input} from '@grafana/ui';
+import React, {ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef} from 'react';
+import {Button, IconButton, InlineField, Input, Select} from '@grafana/ui';
 import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
 import {
   getQueryVariablesAsJsonString,
+  LabelOption,
+  LabelOptionType,
   ParsingOption,
   WildGraphQLAnyQuery,
   WildGraphQLDataSourceOptions
@@ -135,6 +137,8 @@ export function QueryEditor(props: Props) {
 
 function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
   const editorContext = useEditorContext();
+  const labelToAddRef = useRef<HTMLInputElement>(null);
+
   const onOperationNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newOperationName = event.target.value || undefined;
     const queryEditor = editorContext?.queryEditor;
@@ -149,13 +153,25 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
     onChange({ ...query, operationName: newOperationName });
   };
 
-  const onParsingOptionChange = (event: React.FormEvent<HTMLInputElement>, field: keyof ParsingOption, editedIndex: number) => {
+  const setParsingOption = (parsingOptionIndex: number, newParsingOption: ParsingOption) => {
     onChange({
       ...query,
-      parsingOptions: query.parsingOptions.map((parsingOption, index) => index === editedIndex
+      parsingOptions: query.parsingOptions.map((parsingOption, index) => index === parsingOptionIndex
+        ? newParsingOption
+        : parsingOption
+      )
+    });
+  };
+  const setLabelOption = (parsingOptionIndex: number, labelOptionIndex: number, newLabelOption: LabelOption) => {
+    onChange({
+      ...query,
+      parsingOptions: query.parsingOptions.map((parsingOption, index) => index === parsingOptionIndex
         ? {
           ...parsingOption,
-          [field]: event.currentTarget.value,
+          labelOptions: parsingOption.labelOptions!.map((labelOption, index) => index === labelOptionIndex
+            ? newLabelOption
+            : labelOption
+          )
         }
         : parsingOption
       )
@@ -169,19 +185,73 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
     onChange({
       ...query,
       parsingOptions: newParsingOptions,
-    })
+    });
   };
-  const newParsingOption = () => {
+  const deleteLabelOption = (parsingOptionIndex: number, labelOptionIndex: number) => {
+    onChange({
+      ...query,
+      parsingOptions: query.parsingOptions.map((parsingOption, index) => {
+          if (index === parsingOptionIndex) {
+            const newLabelOptions: LabelOption[] = [];
+            newLabelOptions.push(...parsingOption.labelOptions!.slice(0, labelOptionIndex));
+            newLabelOptions.push(...parsingOption.labelOptions!.slice(labelOptionIndex + 1, parsingOption.labelOptions!.length));
+            return {
+              ...parsingOption,
+              labelOptions: newLabelOptions,
+            };
+          }
+          return parsingOption;
+        }
+      )
+    });
+  };
+
+  const addNewParsingOption = () => {
     const newParsingOptions = [...query.parsingOptions];
     const timePath = query.parsingOptions.length === 0 ? "time.path" : query.parsingOptions[query.parsingOptions.length - 1].timePath;
     newParsingOptions.push({
       "dataPath": "data.path",
       "timePath": timePath,
-    })
+    });
     onChange({
       ...query,
       parsingOptions: newParsingOptions,
-    })
+    });
+  };
+
+  const addNewLabel = () => {
+    const value = labelToAddRef.current?.value;
+    if (value === undefined) {
+      console.error("Label to add has an uninitialized ref!")
+    } else {
+      labelToAddRef.current!.value = "";
+      const newParsingOptions = query.parsingOptions.map((parsingOption) => {
+        if (parsingOption.labelOptions?.find((labelOption) => labelOption.name === value) !== undefined) {
+          // if this parsing option already has a label option with the same name, don't add it
+          return parsingOption;
+        }
+        const newLabelOptions = [...(parsingOption.labelOptions ?? [])];
+        newLabelOptions.push({
+          name: value,
+          type: LabelOptionType.CONSTANT,
+          value: "",
+        });
+        return {
+          ...parsingOption,
+          labelOptions: newLabelOptions,
+        };
+      });
+      onChange({
+        ...query,
+        parsingOptions: newParsingOptions,
+      });
+    }
+  };
+
+  const handleLabelToAddKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      addNewLabel();
+    }
   };
 
   const currentOperationName = editorContext?.queryEditor?.operationName;
@@ -232,21 +302,27 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
             />
           </InlineField>
         </div>
-        {query.parsingOptions.map((parsingOption, index) => <>
+      </div>
+      <h3 className="page-heading">Parsing Options</h3>
+      <div className="gf-form-group">
+        {query.parsingOptions.map((parsingOption, parsingOptionIndex) => <>
           <div className="gf-form-inline" style={{marginTop: "1em"}}>
-            <InlineField label={`Parsing Option ${index + 1}`} labelWidth={LABEL_WIDTH}>
+            <InlineField label={`Parsing Option ${parsingOptionIndex + 1}`} labelWidth={LABEL_WIDTH}>
               <div></div>
             </InlineField>
             {query.parsingOptions.length === 1
               ? null
-              : <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(index)}/>
+              : <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(parsingOptionIndex)}/>
             }
           </div>
           <div className="gf-form-inline">
             <InlineField label="Data Path" labelWidth={LABEL_WIDTH}
                          tooltip="Dot-delimited path to an array nested in the root of the JSON response.">
               <Input
-                onChange={event => onParsingOptionChange(event, "dataPath", index)}
+                onChange={event => setParsingOption(parsingOptionIndex, {
+                  ...parsingOption,
+                  dataPath: event.currentTarget.value
+                })}
                 value={parsingOption.dataPath ?? ''}
                 width={INPUT_WIDTH}/>
             </InlineField>
@@ -255,11 +331,55 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
             <InlineField label="Time Path" labelWidth={LABEL_WIDTH}
                          tooltip="Dot-delimited path to the time field relative to the data path">
               <Input
-                onChange={event => onParsingOptionChange(event, "timePath", index)}
+                onChange={event => setParsingOption(parsingOptionIndex, {
+                  ...parsingOption,
+                  timePath: event.currentTarget.value
+                })}
                 value={parsingOption.timePath ?? ''}
                 width={INPUT_WIDTH}/>
             </InlineField>
           </div>
+          {parsingOption.labelOptions?.map((labelOption, labelOptionIndex) => <>
+            <div className="gf-form-inline">
+              <InlineField
+                label={`Label: "${labelOption.name}"`}
+                tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
+                labelWidth={LABEL_WIDTH}
+              >
+                <Select
+                  width={16}
+                  options={[
+                    { label: "Constant", value: LabelOptionType.CONSTANT },
+                    { label: "Field", value: LabelOptionType.FIELD },
+                  ]}
+                  value={labelOption.type}
+                  onChange={(value) => {
+                    const newType = value.value;
+                    if (newType !== undefined) {
+                      setLabelOption(parsingOptionIndex, labelOptionIndex, {
+                        ...labelOption,
+                        type: newType,
+                      });
+                    }
+                  }}
+                />
+
+              </InlineField>
+              <InlineField label="Value" labelWidth={8}>
+                <Input
+                  width={INPUT_WIDTH}
+                  value={labelOption.value}
+                  onChange={(event) => {
+                    setLabelOption(parsingOptionIndex, labelOptionIndex, {
+                      ...labelOption,
+                      value: event.currentTarget.value,
+                    })
+                  }}
+                />
+              </InlineField>
+              <IconButton name={"minus"} onClick={() => deleteLabelOption(parsingOptionIndex, labelOptionIndex)}/>
+            </div>
+          </>)}
         </>)}
 
         {/*https://developers.grafana.com/ui/latest/index.html?path=/docs/buttons-button--examples*/}
@@ -267,10 +387,21 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
         <Button
           variant="secondary"
           style={{marginTop: "1em"}}
-          onClick={() => newParsingOption()}
+          onClick={() => addNewParsingOption()}
         >
           Add Parsing Option
         </Button>
+        <div className="gf-form-inline" style={{marginTop: "0.5em"}}>
+          <InlineField label="Label to add" labelWidth={LABEL_WIDTH}
+                       tooltip="Type the name of the label you would like to add, then press the plus button.">
+            <Input
+              ref={labelToAddRef}
+              onKeyDown={handleLabelToAddKeyDown}
+              defaultValue=''
+              width={INPUT_WIDTH}/>
+          </InlineField>
+          <IconButton name={"plus"} onClick={() => addNewLabel()}/>
+        </div>
       </div>
     </>
   );

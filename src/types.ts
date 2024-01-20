@@ -3,16 +3,26 @@ import { DataQuery } from '@grafana/schema';
 
 type VariablesType = string | Record<string, any>;
 
+export interface LabelOption {
+  name: string;
+  type: LabelOptionType;
+  /** When {@link type} is {@link LabelOptionType.CONSTANT}, this represents a text value that is constant.
+   * When {@link type} is {@link LabelOptionType.FIELD}, this represents the path to a field relative to the data path */
+  value: string;
+}
+export enum LabelOptionType {
+  CONSTANT = "constant",
+  FIELD = "field",
+}
 
 export interface ParsingOption {
   dataPath: string;
-  /** Required. The path to the time (this represents the "start time" in the case when {@link timeEndPath} is defined) */
+  // TODO replace timePath with timePaths
+  /** Required. The path to the time */
   timePath: string;
-  // TODO use timeEndPath on the backend
-  /** Optional. The path to the "end time". Should only be shown for the annotation query. A blank string should be treated the same as undefined*/
-  timeEndPath?: string;
-  // TODO add group by and way to create labels with values of particular fields
-  //   Label names must be consistent between parsing options
+
+  /** The label options. The number of label options and the names of the label options should be consistent between parsing options for the best user experience.*/
+  labelOptions?: LabelOption[];
 }
 
 
@@ -109,7 +119,14 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   parsingOptions: [
     {
       dataPath: "queryStatus.batteryVoltage",
-      timePath: "dateMillis"
+      timePath: "dateMillis",
+      labelOptions: [
+        {
+          name: "displayName",
+          type: LabelOptionType.FIELD,
+          value: "packet.identityInfo.displayName"
+        }
+      ]
     }
   ]
 };
