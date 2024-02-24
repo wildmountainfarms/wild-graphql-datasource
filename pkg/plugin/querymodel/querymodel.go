@@ -14,5 +14,19 @@ type ParsingOption struct {
 	// The path from the root to the array. This is dot-delimited
 	DataPath string `json:"dataPath"`
 	// the time path relative to the data path.
-	TimePath string `json:"timePath"`
+	TimePath     string        `json:"timePath"`
+	LabelOptions []LabelOption `json:"labelOptions"`
+}
+
+type LabelOptionType string
+
+const (
+	CONSTANT LabelOptionType = "constant"
+	FIELD    LabelOptionType = "field"
+)
+
+type LabelOption struct {
+	Name  string          `json:"name"`
+	Type  LabelOptionType `json:"type"`
+	Value string          `json:"value"`
 }

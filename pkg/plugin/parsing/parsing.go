@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/framemap"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
 	"reflect"
 	"strings"
@@ -12,9 +13,17 @@ import (
 
 // the purpose of this file is to parse JSON data with configuration from a ParsingOption
 
-func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymodel.ParsingOption) (*data.Frame, error) {
+type ParseDataErrorType int
+
+const (
+	NO_ERROR       ParseDataErrorType = 0
+	FRIENDLY_ERROR ParseDataErrorType = 1
+	UNKNOWN_ERROR  ParseDataErrorType = 2
+)
+
+func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {
 	if len(parsingOption.DataPath) == 0 {
-		return nil, errors.New("data path cannot be empty")
+		return nil, errors.New("data path cannot be empty"), FRIENDLY_ERROR
 	}
 	split := strings.Split(parsingOption.DataPath, ".")
 
@@ -22,19 +31,19 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymo
 	for _, part := range split[:len(split)-1] {
 		newData, exists := currentData[part]
 		if !exists {
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s does not exist! dataPath: %s", part, parsingOption.DataPath))
+			return nil, errors.New(fmt.Sprintf("Part of data path: %s does not exist! dataPath: %s", part, parsingOption.DataPath)), FRIENDLY_ERROR
 		}
 		switch value := newData.(type) {
 		case map[string]interface{}:
 			currentData = value
 		default:
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! dataPath: %s", part, parsingOption.DataPath))
+			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! dataPath: %s", part, parsingOption.DataPath)), FRIENDLY_ERROR
 		}
 	}
 	// after this for loop, currentData should be an array if everything is going well
 	finalData, finalDataExists := currentData[split[len(split)-1]]
 	if !finalDataExists {
-		return nil, errors.New(fmt.Sprintf("Final part of data path: %s does not exist! dataPath: %s", split[len(split)-1], parsingOption.DataPath))
+		return nil, errors.New(fmt.Sprintf("Final part of data path: %s does not exist! dataPath: %s", split[len(split)-1], parsingOption.DataPath)), FRIENDLY_ERROR
 	}
 
 	var dataArray []map[string]interface{}
@@ -46,22 +55,35 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymo
 			case map[string]interface{}:
 				dataArray[i] = typedElement
 			default:
-				return nil, errors.New(fmt.Sprintf("One of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element)))
+				return nil, errors.New(fmt.Sprintf("One of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element))), FRIENDLY_ERROR
 			}
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value)))
+		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))), FRIENDLY_ERROR
 	}
 
-	// fieldMap is a map of keys to array of data points. Upon first initialization of a particular key's value,
+	// We store a fieldMap inside of this frameMap.
+	//   fieldMap is a map of keys to array of data points. Upon first initialization of a particular key's value,
 	//   an array should be chosen corresponding to the first value of that key.
 	//   Upon subsequent element insertion, if the type of the array does not match that elements type, an error is thrown.
 	//   This error is never expected to occur because a correct GraphQL response should never have a particular field be of different types
-	fieldMap := map[string]interface{}{}
+	fm := framemap.CreateFrameMap()
+
+	//labelsToFieldMapMap := map[Labels]map[string]interface{}{}
 
 	for _, dataElement := range dataArray {
 		flatData := map[string]interface{}{}
 		flattenData(dataElement, "", flatData)
+		labels, err := getLabelsFromFlatData(flatData, parsingOption)
+		if err != nil {
+			return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
+		}
+		var fieldMap, fieldMapExists = fm.Get(labels)
+		if !fieldMapExists {
+			fieldMap = map[string]interface{}{}
+			fm.Put(labels, fieldMap)
+		}
+
 		for key, value := range flatData {
 			existingFieldValues, fieldValuesExist := fieldMap[key]
 
@@ -74,16 +96,16 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymo
 					//   and also consider using time.RFC339Nano instead
 					parsedTime, err := time.Parse(time.RFC3339, valueValue)
 					if err != nil {
-						return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", valueValue))
+						return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", valueValue)), FRIENDLY_ERROR
 					}
 					timeValue = parsedTime
 				case float64:
 					timeValue = time.UnixMilli(int64(valueValue))
 				case bool:
-					return nil, errors.New("time field is a bool")
+					return nil, errors.New("time field is a bool"), FRIENDLY_ERROR
 				default:
 					// This case should never happen because we never expect other types to pop up here
-					return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", valueValue, reflect.TypeOf(valueValue)))
+					return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", valueValue, reflect.TypeOf(valueValue))), FRIENDLY_ERROR
 				}
 				var fieldValues []time.Time
 				if fieldValuesExist {
@@ -91,7 +113,7 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymo
 					case []time.Time:
 						fieldValues = typedExistingFieldValues
 					default:
-						return nil, errors.New(fmt.Sprintf("This error should never occur. The existing array for time field values is of the type: %v", reflect.TypeOf(existingFieldValues)))
+						return nil, errors.New(fmt.Sprintf("This error should never occur. The existing array for time field values is of the type: %v", reflect.TypeOf(existingFieldValues))), UNKNOWN_ERROR
 					}
 				} else {
 					fieldValues = []time.Time{}
@@ -106,24 +128,24 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymo
 						case float64:
 							fieldMap[key] = append(typedExistingFieldValues, typedValue)
 						default:
-							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is float64, but got value with type: %v", key, reflect.TypeOf(value)))
+							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is float64, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
 						}
 					case []string:
 						switch typedValue := value.(type) {
 						case string:
 							fieldMap[key] = append(typedExistingFieldValues, typedValue)
 						default:
-							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is string, but got value with type: %v", key, reflect.TypeOf(value)))
+							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is string, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
 						}
 					case []bool:
 						switch typedValue := value.(type) {
 						case bool:
 							fieldMap[key] = append(typedExistingFieldValues, typedValue)
 						default:
-							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is bool, but got value with type: %v", key, reflect.TypeOf(value)))
+							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is bool, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
 						}
 					default:
-						return nil, errors.New(fmt.Sprintf("This error should never occur. The existing array for time field values is of the type: %v", reflect.TypeOf(existingFieldValues)))
+						return nil, errors.New(fmt.Sprintf("This error should never occur. The existing array for time field values is of the type: %v", reflect.TypeOf(existingFieldValues))), UNKNOWN_ERROR
 					}
 				} else {
 					switch typedValue := value.(type) {
@@ -134,28 +156,37 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymo
 					case bool:
 						fieldMap[key] = []bool{typedValue}
 					default:
-						return nil, errors.New(fmt.Sprintf("Unsupported and unexpected type for key: %s. Type is: %v", key, reflect.TypeOf(value)))
+						return nil, errors.New(fmt.Sprintf("Unsupported and unexpected type for key: %s. Type is: %v", key, reflect.TypeOf(value))), UNKNOWN_ERROR
 					}
 				}
 			}
 		}
 	}
 
-	// create data frame response.
-	// For an overview on data frames and how grafana handles them:
-	//   https://grafana.com/developers/plugin-tools/introduction/data-frames
-	// The goal here is to output a long format. If needed, prepare time series can transform it
-	//   https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/#prepare-time-series
+	return fm.ToFrames(), nil, NO_ERROR
+}
 
-	frame := data.NewFrame("response")
-
-	for key, values := range fieldMap {
-		frame.Fields = append(frame.Fields,
-			data.NewField(key, nil, values),
-		)
+// Given flatData and label options, computes the labels or returns a friendly error
+func getLabelsFromFlatData(flatData map[string]interface{}, parsingOption querymodel.ParsingOption) (data.Labels, error) {
+	labels := map[string]string{}
+	for _, labelOption := range parsingOption.LabelOptions {
+		switch labelOption.Type {
+		case querymodel.CONSTANT:
+			labels[labelOption.Name] = labelOption.Value
+		case querymodel.FIELD:
+			fieldValue, fieldExists := flatData[labelOption.Value]
+			if !fieldExists {
+				return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value))
+			}
+			switch typedFieldValue := fieldValue.(type) {
+			case string:
+				labels[labelOption.Name] = typedFieldValue
+			default:
+				return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue)))
+			}
+		}
 	}
-
-	return frame, nil
+	return labels, nil
 }
 
 func flattenArray[T interface{}](array []T, prefix string, flattenedData map[string]interface{}) {

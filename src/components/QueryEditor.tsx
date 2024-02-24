@@ -262,11 +262,11 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
     //   We need to do this because otherwise we are constantly doing onChange calls, which results in 100% CPU utilization
     if (
       currentOperationName !== undefined
-      && (query.operationName ?? undefined) !== (currentOperationName ?? undefined)
+      && (query.operationName || undefined) !== (currentOperationName || undefined)
     ) {
       // Remember that in our world, we use the string | undefined type for operationName,
       //   so we're basically converting null to undefined here
-      onChange({ ...query, operationName: currentOperationName ?? undefined });
+      onChange({ ...query, operationName: currentOperationName || undefined });
     }
   }, [onChange, query, currentOperationName]);
 

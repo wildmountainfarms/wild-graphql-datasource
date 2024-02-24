@@ -185,14 +185,20 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 
 	// add the frames to the response.
 	for _, parsingOption := range qm.ParsingOptions {
-		frame, err := parsing.ParseData(
+		frames, err, errorType := parsing.ParseData(
 			graphQLResponse.Data,
 			parsingOption,
 		)
 		if err != nil {
+			if errorType == parsing.FRIENDLY_ERROR {
+				return &backend.DataResponse{
+					Error:  err,
+					Status: status,
+				}, nil
+			}
 			return nil, err
 		}
-		response.Frames = append(response.Frames, frame)
+		response.Frames = append(response.Frames, frames...)
 	}
 
 	return &response, nil
