@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"hash/fnv"
+	"slices"
 )
 
 type FrameAndLabels struct {
@@ -25,12 +26,18 @@ func labelsEqual(labelsA data.Labels, labelsB data.Labels) bool {
 }
 func labelsHash(labels data.Labels) uint64 {
 	h := fnv.New64a()
-	for key, value := range labels {
+	// remember, iteration over entries in a map in go is not defined! (That's dumb! Why are you like this Go!)
+	keys := make([]string, 0, len(labels))
+	for key := range labels {
+		keys = append(keys, key)
+	}
+	slices.Sort(keys)
+	for _, key := range keys {
 		_, err := h.Write([]byte(key))
 		if err != nil {
 			panic(fmt.Sprintf("Error writing to hash: %v", err))
 		}
-		_, err = h.Write([]byte(value))
+		_, err = h.Write([]byte(labels[key]))
 		if err != nil {
 			panic(fmt.Sprintf("Error writing to hash: %v", err))
 		}
