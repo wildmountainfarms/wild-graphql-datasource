@@ -7,6 +7,23 @@ https://grafana.com/developers/plugin-tools/create-a-plugin/develop-a-plugin/bes
 https://grafana.com/developers/plugin-tools/tutorials/build-a-data-source-backend-plugin
 
 
+## Installing via grafana-cli
+
+If you want to test a released, but unsigned plugin, follow this.
+
+https://grafana.com/docs/grafana/latest/cli/#override-default-plugin-zip-url
+
+```shell
+grafana cli --pluginUrl https://github.com/wildmountainfarms/wild-graphql-datasource/releases/download/v0.0.2/retrodaredevil-wildgraphql-datasource-0.0.2.zip plugins install retrodaredevil-wildgraphql-datasource
+```
+
+Then update `grafana.ini` with
+
+```ini
+[plugins]
+allow_loading_unsigned_plugins = retrodaredevil-wildgraphql-datasource
+```
+
 ## Building and Development
 
 ### Setup your system
@@ -106,11 +123,6 @@ This section contains notes about dependencies.
 
 ## To-Do
 
-* Queries that result in errors should display nice errors messages on the frontend
-* Add ability to have multiple parsing options
-  * Add "advanced options" section that has "Partition by" and "Alias by"
-    * Including these might be necessary as you may want to partition by and alias by different things for different parts of a GraphQL query
-    * Advances options can also include the ability to add custom labels to the response - this allows different parsing options to be distinguished by Grafana
 * Add support for secure variable data defined in the data source configuration
   * The variables defined here cannot be overridden for any request - this is for security
   * Also add support for secure HTTP headers

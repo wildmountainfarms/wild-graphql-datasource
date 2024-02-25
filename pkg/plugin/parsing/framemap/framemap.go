@@ -5,6 +5,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"hash/fnv"
 	"slices"
+	"sort"
 )
 
 type FrameAndLabels struct {
@@ -109,5 +110,8 @@ func (f *FrameMap) ToFrames() []*data.Frame {
 			r = append(r, frame)
 		}
 	}
+	sort.Slice(r, func(i, j int) bool {
+		return r[i].Name < r[j].Name // sort alphabetically by name
+	})
 	return r
 }

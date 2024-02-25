@@ -99,7 +99,7 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   queryStatus(sourceId: $sourceId, from: $from, to: $to) {
     batteryVoltage {
       dateMillis
-      fragmentId
+      fragmentIdString
       packet {
         batteryVoltage
         identifier {

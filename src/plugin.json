@@ -11,15 +11,24 @@
   "info": {
     "description": "Grafana datasource to interpret GraphQL query results as timeseries data",
     "author": {
-      "name": "Lavender Shannon"
+      "name": "Lavender Shannon",
+      "url": "https://github.com/retrodaredevil"
     },
-    "keywords": ["datasource"],
+    "keywords": [
+      "datasource",
+      "graphql"
+    ],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
     "links": [],
-    "screenshots": [],
+    "screenshots": [
+      {
+        "name": "Query Editor",
+        "path": "img/screenshot-query-editor.png"
+      }
+    ],
     "version": "%VERSION%",
     "updated": "%TODAY%"
   },

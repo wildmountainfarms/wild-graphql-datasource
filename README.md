@@ -1,20 +1,22 @@
 # Wild GraphQL Datasource
 
-**This plugin is in early development. Breaking changes may happen at any time.**
-
 This is a Grafana datasource that aims to make requesting time series data via a GraphQL endpoint easy.
-This datasource is similar to https://github.com/fifemon/graphql-datasource, but is not compatible.
-This datasource tries to reimagine how GraphQL queries should be made from Grafana.
+The query editor uses [GraphiQL](https://github.com/graphql/graphiql) to provide an intuitive editor with autocompletion.
+Requests are made in the backend allowing support for alerting.
 
-Requests are made in the backend. Results are consistent between queries and alerting.
 
 ## Features
 
 * Complex GraphQL responses can be turned into timeseries data, or a simple table
 * Includes [GraphiQL](https://github.com/graphql/graphiql) query editor. Autocompletion and documentation for the GraphQL schema available inside Grafana!
-* This is a backend plugin, so alerting is supported
+  * Documentation explorer can be opened from the query editor
+  * Prettify the query with the click of a button
 * `from` and `to` variables are given to the query via [native GraphQL variables](https://graphql.org/learn/queries/#variables)
 * Variables section of the query editor supports interpolation of string values using [Grafana variables](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/). (\*not supported in alerting or other backend-only queries)
+* Multiple parsing options are supported allowing for a single GraphQL query to return many different data point with different formats.
+  * Each parsing option has its own labels, which can be populated by a field in the response. These labels are used to group the response into different data frames.
+  * Labels can be used to change the display name by using `${__field.labels["displayName"]}` under Standard options > Display name.
+* This is a backend plugin, so alerting is supported
 * [Annotation support](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
 
 
