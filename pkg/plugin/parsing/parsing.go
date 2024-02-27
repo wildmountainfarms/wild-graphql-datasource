@@ -58,6 +58,12 @@ func ParseData(graphQlResponseData map[string]interface{}, parsingOption querymo
 				return nil, errors.New(fmt.Sprintf("One of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element))), FRIENDLY_ERROR
 			}
 		}
+	case map[string]interface{}:
+		// It's also valid if the final part of the data path refers to an object.
+		//   The only downside of this is that it makes configuration errors harder to diagnose.
+		dataArray = []map[string]interface{}{
+			value,
+		}
 	default:
 		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))), FRIENDLY_ERROR
 	}

@@ -123,6 +123,7 @@ This section contains notes about dependencies.
 
 ## To-Do
 
+* Add ability to move parsing options up and down
 * Add support for secure variable data defined in the data source configuration
   * The variables defined here cannot be overridden for any request - this is for security
   * Also add support for secure HTTP headers

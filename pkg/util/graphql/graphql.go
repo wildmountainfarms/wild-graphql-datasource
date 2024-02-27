@@ -37,6 +37,8 @@ func (request *GraphQLRequest) ToRequest(ctx context.Context, url string) (*http
 }
 
 type GraphQLResponse struct {
+	// TODO we need this data to be able to iterate over it in its actual order.
+	//   Go maps don't guarantee insertion order or any order for that matter
 	Data   map[string]interface{} `json:"data"`
 	Errors []GraphQLError         `json:"errors"`
 }

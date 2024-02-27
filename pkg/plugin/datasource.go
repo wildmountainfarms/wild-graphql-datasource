@@ -173,14 +173,6 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 		}, nil
 	}
 
-	//dataBytes, serializeError := json.Marshal(graphQLResponse.Data)
-	//if serializeError != nil {
-	//	return nil, serializeError // this should not happen
-	//}
-	//log.DefaultLogger.Info(fmt.Sprintf("result is: %s", dataBytes))
-
-	log.DefaultLogger.Debug("Successful query!")
-
 	var response backend.DataResponse
 
 	// add the frames to the response.
