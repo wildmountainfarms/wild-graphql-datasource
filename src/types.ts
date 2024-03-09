@@ -95,7 +95,7 @@ export interface WildGraphQLSecureJsonData {
 }
 
 export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
-  queryText: `query BatteryVoltage($sourceId: String!, $from: Long!, $to: Long!) {
+  queryText: `query ($sourceId: String!, $from: Long!, $to: Long!) {
   queryStatus(sourceId: $sourceId, from: $from, to: $to) {
     batteryVoltage {
       dateMillis
@@ -132,7 +132,7 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
 };
 
 export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
-  queryText: `query BatteryVoltage($from: Long!, $to: Long!) {
+  queryText: `query ($from: Long!, $to: Long!) {
   queryStatus(sourceId: "default", from: $from, to: $to) {
     batteryVoltage {
       dateMillis
@@ -152,7 +152,7 @@ export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
 };
 
 export const DEFAULT_ANNOTATION_QUERY: Partial<WildGraphQLAnnotationQuery> = {
-  queryText: `query BatteryVoltage($from: Long!, $to: Long!) {
+  queryText: `query ($from: Long!, $to: Long!) {
   queryEvent(from:$from, to:$to) {
     mateCommand {
       dateMillis

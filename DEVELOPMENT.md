@@ -123,6 +123,8 @@ This section contains notes about dependencies.
 
 ## To-Do
 
+* Make data returned in the same order as the JSON specified it was
+  * GoDS seems like a good solution, but there is a problem with its linked hash map deserializer: https://github.com/emirpasic/gods/issues/171
 * Add ability to move parsing options up and down
 * Add support for secure variable data defined in the data source configuration
   * The variables defined here cannot be overridden for any request - this is for security

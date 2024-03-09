@@ -9,7 +9,7 @@ services:
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana-oss}
         # https://grafana.com/docs/grafana/latest/whatsnew/
-        grafana_version: ${GRAFANA_VERSION:-10.2.3}
+        grafana_version: ${GRAFANA_VERSION:-10.3.3}
     ports:
       - 3000:3000/tcp
     volumes:
