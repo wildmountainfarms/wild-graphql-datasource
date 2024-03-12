@@ -1,0 +1,98 @@
+{
+  "data": {
+    "queryStatus": {
+      "batteryVoltage": [
+        {
+          "dateMillis": 1704333209773,
+          "packet": {
+            "batteryVoltage": 27.8
+          }
+        },
+        {
+          "dateMillis": 1704333209773,
+          "packet": {
+            "batteryVoltage": 27.6
+          }
+        },
+        {
+          "dateMillis": 1704333209773,
+          "packet": {
+            "batteryVoltage": 27.7
+          }
+        },
+        {
+          "dateMillis": 1704333209773,
+          "packet": {
+            "batteryVoltage": 27.6
+          }
+        },
+        {
+          "dateMillis": 1704333305769,
+          "packet": {
+            "batteryVoltage": 27.8
+          }
+        },
+        {
+          "dateMillis": 1704333305769,
+          "packet": {
+            "batteryVoltage": 27.6
+          }
+        },
+        {
+          "dateMillis": 1704333305769,
+          "packet": {
+            "batteryVoltage": 27.5
+          }
+        },
+        {
+          "dateMillis": 1704333305769,
+          "packet": {
+            "batteryVoltage": 27.3
+          }
+        },
+        {
+          "dateMillis": 1704333404770,
+          "packet": {
+            "batteryVoltage": 27.8
+          }
+        },
+        {
+          "dateMillis": 1704333404770,
+          "packet": {
+            "batteryVoltage": 27.6
+          }
+        },
+        {
+          "dateMillis": 1704333404770,
+          "packet": {
+            "batteryVoltage": 27.6
+          }
+        },
+        {
+          "dateMillis": 1704333404770,
+          "packet": {
+            "batteryVoltage": 27.3
+          }
+        },
+        {
+          "dateMillis": 1704333238275,
+          "packet": {
+            "batteryVoltage": 27.5
+          }
+        },
+        {
+          "dateMillis": 1704333239996,
+          "packet": {
+            "batteryVoltage": 27.4
+          }
+        },
+        {
+          "dateMillis": 1704333350030,
+          "packet": {
+            "batteryVoltage": 27.41
+          }
+        }
+      ]
+    }
+  }
+}

@@ -15,18 +15,18 @@ func TestPrimitivesAndNestedArray(t *testing.T) {
   [1, 2]
 ]
 `
-	var array = Array{}
+	var array = NewArray()
 	//err := array.UnmarshalJSON([]byte(jsonString))
 	err := json.Unmarshal([]byte(jsonString), &array)
 	if err != nil {
 		t.Fatal("Could not unmarshal JSON", err)
 		return
 	}
-	if len(array) == 0 {
+	if len(*array) == 0 {
 		t.Error("Empty array")
 		return
 	}
-	if value, ok := array[0].(*Boolean); !ok || *value != true {
+	if value, ok := (*array)[0].(*Boolean); !ok || *value != true {
 		if !ok {
 			t.Error("First element is not a boolean")
 			return
@@ -34,20 +34,20 @@ func TestPrimitivesAndNestedArray(t *testing.T) {
 		t.Error("First element's value is not true!")
 		return
 	}
-	if value, ok := array[1].(*String); !ok || *value != "asdf" {
+	if value, ok := (*array)[1].(*String); !ok || *value != "asdf" {
 		t.Error("Second element's value is not asdf!")
 		return
 	}
-	if value, ok := array[2].(Null); !ok || value != NULL {
+	if value, ok := (*array)[2].(Null); !ok || value != NULL {
 		t.Error("Third element's value is not null!")
 		return
 	}
-	if value, ok := array[3].(*Number); !ok || value.Number() != "1.1" {
+	if value, ok := (*array)[3].(*Number); !ok || value.Number() != "1.1" {
 		t.Error("Forth element's value is not 1.1!")
 		return
 	}
 	{
-		nestedArray, ok := array[4].(*Array)
+		nestedArray, ok := (*array)[4].(*Array)
 		if !ok {
 			t.Error("Fifth element is not an array!")
 			return
@@ -143,6 +143,33 @@ func TestObject(t *testing.T) {
 		if value != 3 {
 			t.Error("Value is incorrect")
 		}
+	}
+
+}
+
+func TestVeryNestedData(t *testing.T) {
+	jsonString := `
+
+{
+  "data": {
+    "queryStatus": {
+      "batteryVoltage": [
+        {
+          "dateMillis": 1704333209773,
+          "packet": {
+            "batteryVoltage": 27.8
+          }
+        }
+      ]
+    }
+  }
+}
+`
+	var object = NewObject()
+	err := json.Unmarshal([]byte(jsonString), &object)
+	if err != nil {
+		t.Fatal("Could not unmarshal JSON", err)
+		return
 	}
 
 }

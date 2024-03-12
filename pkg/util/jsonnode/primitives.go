@@ -63,6 +63,12 @@ func (b *Boolean) UnmarshalJSON(data []byte) error {
 	*b = Boolean(value)
 	return nil
 }
+func (b *Boolean) Bool() bool {
+	if *b {
+		return true
+	}
+	return false
+}
 
 type String string
 

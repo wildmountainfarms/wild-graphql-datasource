@@ -10,6 +10,11 @@ import (
 
 type Array []Node
 
+func NewArray() *Array {
+	array := Array{}
+	return &array
+}
+
 func (_ *Array) sealed() {}
 
 func (a *Array) String() string {
@@ -41,6 +46,7 @@ func (a *Array) decodeJSON(startToken json.Token, decoder *json.Decoder) error {
 }
 
 func (a *Array) UnmarshalJSON(data []byte) error {
+	*a = Array{}
 	d := createDecoder(bytes.NewReader(data))
 
 	var token, err = d.Token()

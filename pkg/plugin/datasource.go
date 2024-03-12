@@ -8,7 +8,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/queryvariables"
@@ -103,7 +102,7 @@ func statusFromResponse(response http.Response) backend.Status {
 // In these cases, you can assume that something is seriously wrong, as we didn't intend to recover from that specific situation.
 func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) (*backend.DataResponse, error) {
 
-	log.DefaultLogger.Info(fmt.Sprintf("JSON is: %s", query.JSON))
+	//log.DefaultLogger.Info(fmt.Sprintf("JSON is: %s", query.JSON))
 
 	// Unmarshal the JSON into our QueryModel.
 	var qm querymodel.QueryModel
@@ -119,7 +118,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 			Status: backend.StatusBadRequest,
 		}, nil
 	}
-	log.DefaultLogger.Info("Query text is: " + qm.QueryText)
+	//log.DefaultLogger.Info("Query text is: " + qm.QueryText)
 
 	// use later: pCtx.AppInstanceSettings.DecryptedSecureJSONData
 	variables, _ := queryvariables.ParseVariables(query, qm.Variables)
@@ -178,7 +177,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 	// add the frames to the response.
 	for _, parsingOption := range qm.ParsingOptions {
 		frames, err, errorType := parsing.ParseData(
-			graphQLResponse.Data,
+			&graphQLResponse.Data,
 			parsingOption,
 		)
 		if err != nil {
@@ -246,8 +245,7 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 			Message: "Something went wrong: " + resp.Status,
 		}, nil
 	}
-	_, schemaExists := graphQLResponse.Data["__schema"]
-	if !schemaExists {
+	if !graphQLResponse.Data.KeyExists("__schema") {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
 			Message: "Unexpected GraphQL response!",

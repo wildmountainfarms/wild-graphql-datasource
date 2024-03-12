@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 	"io"
 	"net/http"
 )
@@ -37,10 +38,9 @@ func (request *GraphQLRequest) ToRequest(ctx context.Context, url string) (*http
 }
 
 type GraphQLResponse struct {
-	// TODO we need this data to be able to iterate over it in its actual order.
-	//   Go maps don't guarantee insertion order or any order for that matter
-	Data   map[string]interface{} `json:"data"`
-	Errors []GraphQLError         `json:"errors"`
+	// We use a jsonnode.Object here because it maintains the order of the keys in a JSON object
+	Data   jsonnode.Object `json:"data"`
+	Errors []GraphQLError  `json:"errors"`
 }
 
 type GraphQLError struct {
@@ -64,6 +64,7 @@ func ParseGraphQLResponse(body io.ReadCloser) (*GraphQLResponse, error) {
 	var graphQLResponse GraphQLResponse
 	err = json.Unmarshal(bodyAsBytes, &graphQLResponse)
 	if err != nil {
+		log.DefaultLogger.Error("Error while parsing GraphQL response to GraphQLResponse")
 		return nil, err
 	}
 	return &graphQLResponse, nil

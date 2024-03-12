@@ -25,7 +25,6 @@ func (o *Object) decodeJSON(startToken json.Token, decoder *json.Decoder) error 
 		return errors.New(fmt.Sprintf("Token is not the start of an object! Token: %v", startToken))
 	}
 	for {
-
 		keyToken, err := decoder.Token()
 		if err != nil {
 			return err
@@ -49,16 +48,13 @@ func (o *Object) decodeJSON(startToken json.Token, decoder *json.Decoder) error 
 		if err != nil {
 			return err
 		}
-
-		_, keyExists := o.data[key]
-		if !keyExists {
-			o.order = append(o.order, key)
-		}
-		o.data[key] = valueNode
+		o.Put(key, valueNode)
 	}
 }
 
 func (o *Object) UnmarshalJSON(data []byte) error {
+	o.data = map[string]Node{}
+	o.order = nil
 	d := createDecoder(bytes.NewReader(data))
 
 	var token, err = d.Token()
@@ -88,4 +84,16 @@ func (o *Object) Get(key string) Node {
 		return nil
 	}
 	return node
+}
+func (o *Object) KeyExists(key string) bool {
+	_, exists := o.data[key]
+	return exists
+}
+
+func (o *Object) Put(key string, value Node) {
+	_, keyExists := o.data[key]
+	if !keyExists {
+		o.order = append(o.order, key)
+	}
+	o.data[key] = value
 }

@@ -2,90 +2,47 @@ package framemap
 
 import (
 	"fmt"
+	"github.com/emirpasic/gods/v2/maps/linkedhashmap"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"hash/fnv"
-	"slices"
-	"sort"
 )
 
 type FrameAndLabels struct {
-	labels   data.Labels
-	fieldMap map[string]interface{}
+	labels data.Labels
+	// A map of field names to an array of the values of that given column
+	fieldMap *linkedhashmap.Map[string, any]
 }
 
-func labelsEqual(labelsA data.Labels, labelsB data.Labels) bool {
-	if len(labelsA) != len(labelsB) {
-		return false
-	}
-	for key, value := range labelsA {
-		otherValue, exists := labelsB[key]
-		if !exists || value != otherValue {
-			return false
-		}
-	}
-	return true
-}
-func labelsHash(labels data.Labels) uint64 {
-	h := fnv.New64a()
-	// remember, iteration over entries in a map in go is not defined! (That's dumb! Why are you like this Go!)
-	keys := make([]string, 0, len(labels))
-	for key := range labels {
-		keys = append(keys, key)
-	}
-	slices.Sort(keys)
-	for _, key := range keys {
-		_, err := h.Write([]byte(key))
-		if err != nil {
-			panic(fmt.Sprintf("Error writing to hash: %v", err))
-		}
-		_, err = h.Write([]byte(labels[key]))
-		if err != nil {
-			panic(fmt.Sprintf("Error writing to hash: %v", err))
-		}
-	}
-	return h.Sum64()
+func keyOfLabels(labels data.Labels) string {
+	return labels.String()
 }
 
 type FrameMap struct {
-	data map[uint64][]FrameAndLabels
+	data *linkedhashmap.Map[string, FrameAndLabels]
 }
 
-func CreateFrameMap() FrameMap {
-	return FrameMap{
-		data: map[uint64][]FrameAndLabels{},
+func New() *FrameMap {
+	return &FrameMap{
+		data: linkedhashmap.New[string, FrameAndLabels](),
 	}
 }
 
-func (f *FrameMap) Get(labels data.Labels) (map[string]interface{}, bool) {
-	hash := labelsHash(labels)
-	values, exists := f.data[hash]
+func (f *FrameMap) Get(labels data.Labels) (*linkedhashmap.Map[string, any], bool) {
+	mapKey := keyOfLabels(labels)
+	values, exists := f.data.Get(mapKey)
 	if !exists {
 		return nil, false
 	}
-
-	for _, value := range values {
-		if labelsEqual(value.labels, labels) {
-			return value.fieldMap, true
-		}
-	}
-	return nil, false
+	return values.fieldMap, true
 }
-func (f *FrameMap) Put(labels data.Labels, fieldMap map[string]interface{}) {
-	hash := labelsHash(labels)
-	values, exists := f.data[hash]
-	if !exists {
-		f.data[hash] = []FrameAndLabels{{labels: labels, fieldMap: fieldMap}}
-		return
-	}
-	for index, value := range values {
-		if labelsEqual(value.labels, labels) {
-			values[index] = FrameAndLabels{labels: labels, fieldMap: fieldMap}
-			return
-		}
-	}
-
-	newValues := append(values, FrameAndLabels{labels: labels, fieldMap: fieldMap})
-	f.data[hash] = newValues
+func (f *FrameMap) Put(labels data.Labels, fieldMap *linkedhashmap.Map[string, any]) {
+	mapKey := keyOfLabels(labels)
+	f.data.Put(
+		mapKey,
+		FrameAndLabels{
+			labels:   labels,
+			fieldMap: fieldMap,
+		},
+	)
 }
 
 func (f *FrameMap) ToFrames() []*data.Frame {
@@ -96,22 +53,23 @@ func (f *FrameMap) ToFrames() []*data.Frame {
 	//   https://grafana.com/docs/grafana/latest/panels-visualizations/query-transform-data/transform-data/#prepare-time-series
 
 	// NOTE: The order of the frames here determines the order they appear in the legend in Grafana
-	// 	 A workaround on the frontend is to make the legend in "Table" mode and then sort the "Name" column: https://github.com/grafana/grafana/pull/69490
+	//   This is why we use a linkedhashmap.Map everywhere, as it maintains order.
 	var r []*data.Frame
-	for _, values := range f.data {
-		for _, value := range values {
-			frameName := fmt.Sprintf("response %v", value.labels)
-			frame := data.NewFrame(frameName)
-			for key, values := range value.fieldMap {
-				frame.Fields = append(frame.Fields,
-					data.NewField(key, value.labels, values),
-				)
-			}
-			r = append(r, frame)
+	frameMapIterator := f.data.Iterator()
+	for frameMapIterator.Next() {
+		frameAndLabels := frameMapIterator.Value()
+
+		frameName := fmt.Sprintf("response %v", frameAndLabels.labels)
+		frame := data.NewFrame(frameName)
+		fieldMapIterator := frameAndLabels.fieldMap.Iterator()
+		for fieldMapIterator.Next() {
+			key := fieldMapIterator.Key()
+			values := fieldMapIterator.Value()
+			frame.Fields = append(frame.Fields,
+				data.NewField(key, frameAndLabels.labels, values),
+			)
 		}
+		r = append(r, frame)
 	}
-	sort.Slice(r, func(i, j int) bool {
-		return r[i].Name < r[j].Name // sort alphabetically by name
-	})
 	return r
 }

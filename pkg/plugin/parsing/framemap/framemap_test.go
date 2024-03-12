@@ -23,7 +23,7 @@ func TestEqualityAndHash(t *testing.T) {
 }
 
 func TestFrameMap(t *testing.T) {
-	fm := CreateFrameMap()
+	fm := New()
 	labelsA := data.Labels{
 		"asdf": "a",
 	}
