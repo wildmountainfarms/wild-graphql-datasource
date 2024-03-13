@@ -6,7 +6,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-type FrameAndLabels struct {
+type frameAndLabels struct {
 	labels data.Labels
 	// A map of field names to an array of the values of that given column
 	fieldMap *linkedhashmap.Map[string, any]
@@ -17,12 +17,12 @@ func keyOfLabels(labels data.Labels) string {
 }
 
 type FrameMap struct {
-	data *linkedhashmap.Map[string, FrameAndLabels]
+	data *linkedhashmap.Map[string, frameAndLabels]
 }
 
 func New() *FrameMap {
 	return &FrameMap{
-		data: linkedhashmap.New[string, FrameAndLabels](),
+		data: linkedhashmap.New[string, frameAndLabels](),
 	}
 }
 
@@ -38,7 +38,7 @@ func (f *FrameMap) Put(labels data.Labels, fieldMap *linkedhashmap.Map[string, a
 	mapKey := keyOfLabels(labels)
 	f.data.Put(
 		mapKey,
-		FrameAndLabels{
+		frameAndLabels{
 			labels:   labels,
 			fieldMap: fieldMap,
 		},

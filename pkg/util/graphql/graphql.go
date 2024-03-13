@@ -10,19 +10,17 @@ import (
 	"net/http"
 )
 
-// NOTE: We may consider using this library in the future instead: https://github.com/machinebox/graphql
-
-type GraphQLRequest struct {
+type Request struct {
 	Query string `json:"query"`
 	// A map of variable names to the value of that variable. Allowed value types are strings, numeric types, and booleans
 	Variables     map[string]interface{} `json:"variables,omitempty"`
 	OperationName string                 `json:"operationName,omitempty"`
 }
 
-func (request *GraphQLRequest) ToBody() ([]byte, error) {
+func (request *Request) ToBody() ([]byte, error) {
 	return json.Marshal(request)
 }
-func (request *GraphQLRequest) ToRequest(ctx context.Context, url string) (*http.Request, error) {
+func (request *Request) ToRequest(ctx context.Context, url string) (*http.Request, error) {
 	body, err := request.ToBody()
 	if err != nil {
 		return nil, err
@@ -37,34 +35,34 @@ func (request *GraphQLRequest) ToRequest(ctx context.Context, url string) (*http
 	return httpReq, nil
 }
 
-type GraphQLResponse struct {
+type Response struct {
 	// We use a jsonnode.Object here because it maintains the order of the keys in a JSON object
 	Data   jsonnode.Object `json:"data"`
-	Errors []GraphQLError  `json:"errors"`
+	Errors []Error         `json:"errors"`
 }
 
-type GraphQLError struct {
+type Error struct {
 	Message    string                 `json:"message"`
-	Locations  []GraphQLErrorLocation `json:"locations,omitempty"`
+	Locations  []ErrorLocation        `json:"locations,omitempty"`
 	Path       []interface{}          `json:"path,omitempty"`
 	Extensions map[string]interface{} `json:"extensions,omitempty"`
 }
 
-type GraphQLErrorLocation struct {
+type ErrorLocation struct {
 	Line   int `json:"line"`
 	Column int `json:"column"`
 }
 
-func ParseGraphQLResponse(body io.ReadCloser) (*GraphQLResponse, error) {
+func ParseGraphQLResponse(body io.ReadCloser) (*Response, error) {
 	bodyAsBytes, err := io.ReadAll(body)
 	if err != nil {
 		log.DefaultLogger.Error("We don't expect this!")
 		return nil, err
 	}
-	var graphQLResponse GraphQLResponse
+	var graphQLResponse Response
 	err = json.Unmarshal(bodyAsBytes, &graphQLResponse)
 	if err != nil {
-		log.DefaultLogger.Error("Error while parsing GraphQL response to GraphQLResponse")
+		log.DefaultLogger.Error("Error while parsing GraphQL response to graphql.Response")
 		return nil, err
 	}
 	return &graphQLResponse, nil

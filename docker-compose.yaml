@@ -15,3 +15,4 @@ services:
     volumes:
       - ./dist:/var/lib/grafana/plugins/retrodaredevil-wildgraphql-datasource
       - ./provisioning:/etc/grafana/provisioning
+      - ./provisioned-dashboards:/provisioned-dashboards

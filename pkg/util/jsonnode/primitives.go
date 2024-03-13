@@ -1,90 +1,52 @@
 package jsonnode
 
 import (
-	"bytes"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"strconv"
 )
 
-type Number struct {
-	number json.Number
+type Number json.Number
+
+func (_ Number) sealed() {}
+func (n Number) String() string {
+	return n.Number().String()
 }
 
-func (_ *Number) sealed() {}
-func (n *Number) String() string {
-	return n.number.String()
+func (n Number) Number() json.Number {
+	return json.Number(n)
 }
 
-func (n *Number) UnmarshalJSON(data []byte) error {
-	d := json.NewDecoder(bytes.NewReader(data))
-	d.UseNumber()
-	var number json.Number
-	err := d.Decode(&number)
-	if err != nil {
-		return err
-	}
-	n.number = number
-	return nil
+func (n Number) Float64() (float64, error) {
+	return n.Number().Float64()
 }
 
-func (n *Number) Number() json.Number {
-	return n.number
+func (n Number) Int64() (int64, error) {
+	return n.Number().Int64()
 }
-
-func (n *Number) Float64() (float64, error) {
-	return n.number.Float64()
-}
-
-func (n *Number) Int64() (int64, error) {
-	return n.number.Int64()
-}
-func (n *Number) Int() (int, error) {
-	return strconv.Atoi(string(n.number))
+func (n Number) Uint64() (uint64, error) {
+	return strconv.ParseUint(n.String(), 10, 64)
 }
 
 type Boolean bool
 
-func (b *Boolean) sealed() {}
+func (b Boolean) sealed() {}
 
-func (b *Boolean) String() string {
-	if *b {
+func (b Boolean) String() string {
+	if b {
 		return "true"
 	}
 	return "false"
 }
-func (b *Boolean) UnmarshalJSON(data []byte) error {
-	var value bool
-	err := json.Unmarshal(data, &value)
-	if err != nil {
-		return err
-	}
-	*b = Boolean(value)
-	return nil
-}
-func (b *Boolean) Bool() bool {
-	if *b {
-		return true
-	}
-	return false
+func (b Boolean) Bool() bool {
+	return bool(b)
 }
 
 type String string
 
-func (_ *String) sealed() {}
+func (_ String) sealed() {}
 
-func (s *String) String() string {
-	return string(*s)
-}
-func (s *String) UnmarshalJSON(data []byte) error {
-	var value string
-	err := json.Unmarshal(data, &value)
-	if err != nil {
-		return err
-	}
-	*s = String(value)
-	return nil
+func (s String) String() string {
+	return string(s)
 }
 
 type Null bool
@@ -96,32 +58,15 @@ func (_ Null) sealed() {}
 func (n Null) String() string {
 	return "null"
 }
-func (n Null) UnmarshalJSON(data []byte) error {
-	d := createDecoder(bytes.NewReader(data))
-	token, err := d.Token()
-	if err != nil {
-		return err
-	}
-	if token != nil {
-		return errors.New(fmt.Sprintf("token is not a null token. token: %v", token))
-	}
-	return nil
-}
 
 func parsePrimitive(token json.Token) Node {
 	switch typedToken := token.(type) {
 	case json.Number:
-		number := Number{typedToken}
-		var node Node = &number
-		return node
+		return Number(typedToken)
 	case bool:
-		value := Boolean(typedToken)
-		var node Node = &value
-		return node
+		return Boolean(typedToken)
 	case string:
-		value := String(typedToken)
-		var node Node = &value
-		return node
+		return String(typedToken)
 	case nil:
 		return NULL
 	}

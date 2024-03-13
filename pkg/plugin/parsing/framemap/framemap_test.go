@@ -1,26 +1,12 @@
 package framemap
 
 import (
+	"github.com/emirpasic/gods/v2/maps/linkedhashmap"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"reflect"
 	"testing"
 	"time"
 )
-
-func TestEqualityAndHash(t *testing.T) {
-	labelsA := data.Labels{
-		"asdf": "a",
-	}
-	labelsB := data.Labels{
-		"asdf": "b",
-	}
-	if labelsEqual(labelsA, labelsB) {
-		t.Error("labelsA should not equal labelsB")
-	}
-	if labelsHash(labelsA) == labelsHash(labelsB) {
-		t.Error("Should not have the same hashes!")
-	}
-}
 
 func TestFrameMap(t *testing.T) {
 	fm := New()
@@ -30,14 +16,13 @@ func TestFrameMap(t *testing.T) {
 	labelsB := data.Labels{
 		"asdf": "b",
 	}
-	dataA := map[string]interface{}{
-		"batteryVoltage": []float64{22.4, 22.5},
-		"dateMillis":     []time.Time{time.UnixMilli(1705974650887), time.UnixMilli(1705974659884)},
-	}
-	dataB := map[string]interface{}{
-		"batteryVoltage": []float64{22.43, 22.51},
-		"dateMillis":     []time.Time{time.UnixMilli(1705974650888), time.UnixMilli(1705974659885)},
-	}
+	dataA := linkedhashmap.New[string, any]()
+	dataA.Put("batteryVoltage", []float64{22.4, 22.5})
+	dataA.Put("dateMillis", []time.Time{time.UnixMilli(1705974650887), time.UnixMilli(1705974659884)})
+
+	dataB := linkedhashmap.New[string, any]()
+	dataB.Put("batteryVoltage", []float64{22.43, 22.51})
+	dataB.Put("dateMillis", []time.Time{time.UnixMilli(1705974650888), time.UnixMilli(1705974659885)})
 
 	_, exists := fm.Get(labelsA)
 	if exists {

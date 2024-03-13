@@ -81,7 +81,12 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 
 	for _, dataElement := range dataArray {
 		flatData := jsonnode.NewObject()
-		flattenData(dataElement, "", flatData)
+		if !flattenData(dataElement, "", flatData) {
+			// If we cannot flatten the data, we must skip this entry
+			// TODO consider logging this
+			// Data may not be able to be flattened if a null value is present in the data
+			continue
+		}
 		labels, err := getLabelsFromFlatData(flatData, parsingOption)
 		if err != nil {
 			return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
@@ -99,7 +104,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			if key == parsingOption.TimePath {
 				var timeValue time.Time
 				switch typedValue := value.(type) {
-				case *jsonnode.String:
+				case jsonnode.String:
 					// TODO allow user to customize time format
 					// Look at https://stackoverflow.com/questions/522251/whats-the-difference-between-iso-8601-and-rfc-3339-date-formats
 					//   and also consider using time.RFC339Nano instead
@@ -108,7 +113,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 						return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
 					}
 					timeValue = parsedTime
-				case *jsonnode.Number:
+				case jsonnode.Number:
 					epochMillis, err := typedValue.Int64()
 					if err != nil {
 						return nil, err, UNKNOWN_ERROR
@@ -136,7 +141,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					switch typedExistingFieldValues := existingFieldValues.(type) {
 					case []float64:
 						switch typedValue := value.(type) {
-						case *jsonnode.Number:
+						case jsonnode.Number:
 							number, err := typedValue.Float64()
 							if err != nil {
 								return nil, err, UNKNOWN_ERROR
@@ -147,14 +152,14 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 						}
 					case []string:
 						switch typedValue := value.(type) {
-						case *jsonnode.String:
+						case jsonnode.String:
 							fieldMap.Put(key, append(typedExistingFieldValues, typedValue.String()))
 						default:
 							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is string, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
 						}
 					case []bool:
 						switch typedValue := value.(type) {
-						case *jsonnode.Boolean:
+						case jsonnode.Boolean:
 							fieldMap.Put(key, append(typedExistingFieldValues, typedValue.Bool()))
 						default:
 							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is bool, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
@@ -164,18 +169,16 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					}
 				} else {
 					switch typedValue := value.(type) {
-					case *jsonnode.Number:
+					case jsonnode.Number:
 						number, err := typedValue.Float64()
 						if err != nil {
 							return nil, err, UNKNOWN_ERROR
 						}
 						fieldMap.Put(key, []float64{number})
-					case *jsonnode.String:
+					case jsonnode.String:
 						fieldMap.Put(key, []string{typedValue.String()})
-					case *jsonnode.Boolean:
+					case jsonnode.Boolean:
 						fieldMap.Put(key, []bool{typedValue.Bool()})
-					case jsonnode.Null:
-						// do nothing for null
 					default:
 						return nil, errors.New(fmt.Sprintf("Unsupported and unexpected type for key: %s. Type is: %v", key, reflect.TypeOf(value))), UNKNOWN_ERROR
 					}
@@ -200,7 +203,7 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 				return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value))
 			}
 			switch typedFieldValue := fieldValue.(type) {
-			case *jsonnode.String:
+			case jsonnode.String:
 				labels[labelOption.Name] = typedFieldValue.String()
 			default:
 				return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue)))
@@ -210,25 +213,47 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 	return labels, nil
 }
 
-func flattenArray(array *jsonnode.Array, prefix string, flattenedData *jsonnode.Object) {
+func flattenArray(array *jsonnode.Array, prefix string, flattenedData *jsonnode.Object) bool {
 	for key, value := range *array {
-		flattenedData.Put(
-			fmt.Sprintf("%s%d", prefix, key),
-			value,
-		)
+		baseKey := fmt.Sprintf("%s%d", prefix, key)
+		switch typedValue := value.(type) {
+		case *jsonnode.Object:
+			if !flattenData(typedValue, baseKey+".", flattenedData) {
+				return false
+			}
+		case *jsonnode.Array:
+			if !flattenArray(typedValue, baseKey+".", flattenedData) {
+				return false
+			}
+		case jsonnode.Null:
+			return false
+		default:
+			flattenedData.Put(
+				baseKey,
+				value,
+			)
+		}
 	}
+	return true
 }
 
-func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *jsonnode.Object) {
+func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *jsonnode.Object) bool {
 	for _, key := range originalData.Keys() {
 		value := originalData.Get(key)
 		switch typedValue := value.(type) {
 		case *jsonnode.Object:
-			flattenData(typedValue, prefix+key+".", flattenedData)
+			if !flattenData(typedValue, prefix+key+".", flattenedData) {
+				return false
+			}
 		case *jsonnode.Array:
-			flattenArray(typedValue, prefix+key+".", flattenedData)
+			if !flattenArray(typedValue, prefix+key+".", flattenedData) {
+				return false
+			}
+		case jsonnode.Null:
+			return false
 		default:
 			flattenedData.Put(prefix+key, typedValue)
 		}
 	}
+	return true
 }

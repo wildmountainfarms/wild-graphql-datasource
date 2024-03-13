@@ -3,7 +3,6 @@ package parsing
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 )
@@ -62,8 +61,8 @@ func TestParsingJsonNumbersAsNumbersGood(t *testing.T) {
 	if !aExists || !bExists {
 		t.Fatal("something does not exist")
 	}
-	t.Log(fmt.Sprintf("Values of a: %d , b: %d", a, b))
-	t.Log(fmt.Sprintf("Types of a: %v , b: %v", reflect.TypeOf(a), reflect.TypeOf(b)))
+	//t.Log(fmt.Sprintf("Values of a: %d , b: %d", a, b))
+	//t.Log(fmt.Sprintf("Types of a: %v , b: %v", reflect.TypeOf(a), reflect.TypeOf(b)))
 
 	if a != json.Number("9223372036854775807") {
 		t.Error("We expect a to be represented precisely")

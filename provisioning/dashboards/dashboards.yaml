@@ -1,0 +1,11 @@
+# https://grafana.com/docs/grafana/latest/administration/provisioning/#dashboards
+apiVersion: 1
+
+providers:
+  - name: dashboards
+    type: file
+    updateIntervalSeconds: 30
+    disableDeletion: false
+    allowUiUpdates: false
+    options:
+      path: /provisioned-dashboards

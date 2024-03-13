@@ -3,17 +3,20 @@ import {
   CoreApp,
   DataQueryRequest,
   DataQueryResponse,
-  DataSourceInstanceSettings
+  DataSourceInstanceSettings,
 } from '@grafana/data';
 import {DataSourceWithBackend, getTemplateSrv} from '@grafana/runtime';
 import {Observable} from 'rxjs';
 
 import {
-  DEFAULT_ALERTING_QUERY, DEFAULT_ANNOTATION_QUERY,
+  DEFAULT_ALERTING_QUERY,
+  DEFAULT_ANNOTATION_QUERY,
   DEFAULT_QUERY,
-  getQueryVariablesAsJson, WildGraphQLAnnotationQuery,
+  getQueryVariablesAsJson,
+  WildGraphQLAnnotationQuery,
   WildGraphQLAnyQuery,
-  WildGraphQLDataSourceOptions, WildGraphQLMainQuery
+  WildGraphQLDataSourceOptions,
+  WildGraphQLMainQuery
 } from './types';
 import {interpolateVariables} from "./variables";
 
@@ -66,5 +69,6 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildG
   //   // https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-support-for-variables
   //   // Note that in the future, it looks like metricFindQuery will be deprecated in favor of variable support, similar in style to annotation support
   //   return super.metricFindQuery(query, options);
+  //   // Once we add this, use this query on the provisioned dashboard: `query {film(id: "ZmlsbXM6MQ==") {openingCrawl}}`
   // }
 }

@@ -123,14 +123,14 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 	// use later: pCtx.AppInstanceSettings.DecryptedSecureJSONData
 	variables, _ := queryvariables.ParseVariables(query, qm.Variables)
 
-	graphQLRequest := graphql.GraphQLRequest{
+	graphQLRequest := graphql.Request{
 		Query:         qm.QueryText,
 		OperationName: qm.OperationName,
 		Variables:     variables,
 	}
 	request, err := graphQLRequest.ToRequest(ctx, d.settings.URL)
 	if err != nil {
-		// We don't expect the conversion of the GraphQLRequest into a http.Request to fail
+		// We don't expect the conversion of the graphql.Request into a http.Request to fail
 		return nil, err
 	}
 
@@ -202,7 +202,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	// test command to do the same thing:
 	//   curl -X POST -H "Content-Type: application/json" -d '{"query":"{\n\t\t  __schema{\n\t\t\tqueryType{name}\n\t\t  }\n\t\t}"}' https://swapi-graphql.netlify.app/.netlify/functions/index
-	graphQLRequest := graphql.GraphQLRequest{
+	graphQLRequest := graphql.Request{
 		Query: `{
 		  __schema{
 		    queryType{name}

@@ -26,7 +26,7 @@ func TestPrimitivesAndNestedArray(t *testing.T) {
 		t.Error("Empty array")
 		return
 	}
-	if value, ok := (*array)[0].(*Boolean); !ok || *value != true {
+	if value, ok := (*array)[0].(Boolean); !ok || value != true {
 		if !ok {
 			t.Error("First element is not a boolean")
 			return
@@ -34,7 +34,7 @@ func TestPrimitivesAndNestedArray(t *testing.T) {
 		t.Error("First element's value is not true!")
 		return
 	}
-	if value, ok := (*array)[1].(*String); !ok || *value != "asdf" {
+	if value, ok := (*array)[1].(String); !ok || value != "asdf" {
 		t.Error("Second element's value is not asdf!")
 		return
 	}
@@ -42,7 +42,7 @@ func TestPrimitivesAndNestedArray(t *testing.T) {
 		t.Error("Third element's value is not null!")
 		return
 	}
-	if value, ok := (*array)[3].(*Number); !ok || value.Number() != "1.1" {
+	if value, ok := (*array)[3].(Number); !ok || value.Number() != "1.1" {
 		t.Error("Forth element's value is not 1.1!")
 		return
 	}
@@ -56,11 +56,11 @@ func TestPrimitivesAndNestedArray(t *testing.T) {
 			t.Error("Incorrect data")
 			return
 		}
-		if value, ok := (*nestedArray)[0].(*Number); !ok || value.Number() != "1" {
+		if value, ok := (*nestedArray)[0].(Number); !ok || value.Number() != "1" {
 			t.Error("Incorrect data")
 			return
 		}
-		if value, ok := (*nestedArray)[1].(*Number); !ok || value.Number() != "2" {
+		if value, ok := (*nestedArray)[1].(Number); !ok || value.Number() != "2" {
 			t.Error("Incorrect data")
 			return
 		}
@@ -90,12 +90,12 @@ func TestObject(t *testing.T) {
 			t.Error("No value for key a")
 			return
 		}
-		number, ok := nodeValue.(*Number)
+		number, ok := nodeValue.(Number)
 		if !ok {
 			t.Error("Value is not a number")
 			return
 		}
-		value, err := number.Int()
+		value, err := number.Int64()
 		if err != nil {
 			t.Fatal(err)
 			return
@@ -110,12 +110,12 @@ func TestObject(t *testing.T) {
 			t.Error("No value for key b")
 			return
 		}
-		number, ok := nodeValue.(*Number)
+		number, ok := nodeValue.(Number)
 		if !ok {
 			t.Error("Value is not a number")
 			return
 		}
-		value, err := number.Int()
+		value, err := number.Int64()
 		if err != nil {
 			t.Fatal(err)
 			return
@@ -130,12 +130,12 @@ func TestObject(t *testing.T) {
 			t.Error("No value for key c")
 			return
 		}
-		number, ok := nodeValue.(*Number)
+		number, ok := nodeValue.(Number)
 		if !ok {
 			t.Error("Value is not a number")
 			return
 		}
-		value, err := number.Int()
+		value, err := number.Int64()
 		if err != nil {
 			t.Fatal(err)
 			return

@@ -8,3 +8,13 @@ datasources:
     orgId: 1
     version: 1
     editable: true
+  - name: 'Star Wars GraphQL' # Accesses https://github.com/graphql/swapi-graphql
+    type: 'retrodaredevil-wildgraphql-datasource'
+    uid: '9c6ae4eb-3ec7-4aed-a2da-ee51f9303dc8'  # A consistent ID allows this to be referenced in the provisioned dashboard
+    # https://studio.apollographql.com/public/star-wars-swapi/variant/current/home
+    url: 'https://swapi-graphql.netlify.app/.netlify/functions/index'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true

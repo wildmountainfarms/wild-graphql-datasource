@@ -123,14 +123,18 @@ This section contains notes about dependencies.
 
 ## To-Do
 
-* Make data returned in the same order as the JSON specified it was
-  * GoDS seems like a good solution, but there is a problem with its linked hash map deserializer: https://github.com/emirpasic/gods/issues/171
+* Add a provisioned dashboard and datasource that test a publicly available API
+* Updated `src/README.md`
+* Decide on a simpler default query (https://github.com/wildmountainfarms/wild-graphql-datasource/issues/1)
+* Make annotation queries more intuitive
 * Add ability to move parsing options up and down
 * Add support for secure variable data defined in the data source configuration
   * The variables defined here cannot be overridden for any request - this is for security
   * Also add support for secure HTTP headers
-* See what minimum Grafana version we can support
-* Add support for variables: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-support-for-variables
+  
+Lower priority To-Dos
+
+* Add support for variables: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-support-for-variables#add-support-for-query-variables-to-your-data-source
 * Add metrics to backend component: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins#implement-metrics-in-your-plugin
 * Support returning logs data: https://grafana.com/developers/plugin-tools/tutorials/build-a-logs-data-source-plugin
   * We could just add `"logs": true` to `plugin.json`, however we need to support the renaming of fields because sometimes the `body` or `timestamp` fields will be nested
@@ -139,9 +143,11 @@ This section contains notes about dependencies.
   * https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
   * https://grafana.com/legal/plugins/
   * https://grafana.com/developers/plugin-tools/publish-a-plugin/provide-test-environment
-* Publish on a private plugin repository
-  * https://volkovlabs.io/blog/installing-grafana-plugins-from-a-private-repository-805b54a1add3/
 * Create a GraphQL button panel (or a SolarThing app) that has a button panel that can be used to
   * If we create an app, we can follow https://github.com/RedisGrafana/grafana-redis-app
     * https://github.com/RedisGrafana/grafana-redis-app/blob/e093d18a021bb28ba7df3a54d7ad17c2d8e38f88/src/redis-gears-panel/components/RedisGearsPanel/RedisGearsPanel.tsx#L314
 * Auto-populate the data path field by using `documentAST` to recognize the first path to an array
+* Look into Apollo GraphQL
+  * https://studio.apollographql.com/sandbox/explorer
+  * https://www.apollographql.com/docs/graphos/explorer/
+  * https://www.npmjs.com/package/@apollo/explorer
