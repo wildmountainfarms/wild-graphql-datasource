@@ -71,7 +71,6 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
       ...graphQLParams,
       variables: variables
     };
-    console.log(query);
     const observable = backendSrv.fetch({
       url,
       headers,
@@ -208,10 +207,21 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
 
   const addNewParsingOption = () => {
     const newParsingOptions = [...query.parsingOptions];
-    const timePath = query.parsingOptions.length === 0 ? "time.path" : query.parsingOptions[query.parsingOptions.length - 1].timePath;
+    const lastParsingOption = query.parsingOptions.length === 0
+      ? undefined
+      : query.parsingOptions[query.parsingOptions.length - 1];
+    const timePath = lastParsingOption === undefined ? "time.path" : lastParsingOption.timePath;
+    const labelOptions = lastParsingOption === undefined
+      ? undefined
+      : lastParsingOption?.labelOptions?.map(labelOption => ({
+        name: labelOption.name,
+        type: LabelOptionType.CONSTANT,
+        value: ""
+      }));
     newParsingOptions.push({
       "dataPath": "data.path",
       "timePath": timePath,
+      labelOptions
     });
     onChange({
       ...query,
@@ -392,7 +402,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
           Add Parsing Option
         </Button>
         <div className="gf-form-inline" style={{marginTop: "0.5em"}}>
-          <InlineField label="Label to add" labelWidth={LABEL_WIDTH}
+          <InlineField label="Create label" labelWidth={LABEL_WIDTH}
                        tooltip="Type the name of the label you would like to add, then press the plus button.">
             <Input
               ref={labelToAddRef}
