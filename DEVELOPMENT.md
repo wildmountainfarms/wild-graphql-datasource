@@ -123,17 +123,14 @@ This section contains notes about dependencies.
 
 ## To-Do
 
-* Add a provisioned dashboard and datasource that test a publicly available API
-* Updated `src/README.md`
-* Decide on a simpler default query (https://github.com/wildmountainfarms/wild-graphql-datasource/issues/1)
 * Make annotation queries more intuitive
-* Add ability to move parsing options up and down
 * Add support for secure variable data defined in the data source configuration
   * The variables defined here cannot be overridden for any request - this is for security
   * Also add support for secure HTTP headers
   
 Lower priority To-Dos
 
+* Customize default query (https://github.com/wildmountainfarms/wild-graphql-datasource/issues/1)
 * Add support for variables: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-support-for-variables#add-support-for-query-variables-to-your-data-source
 * Add metrics to backend component: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins#implement-metrics-in-your-plugin
 * Support returning logs data: https://grafana.com/developers/plugin-tools/tutorials/build-a-logs-data-source-plugin

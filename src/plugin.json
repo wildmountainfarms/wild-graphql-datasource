@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/grafana/grafana/main/docs/sources/developers/plugins/plugin.schema.json",
   "type": "datasource",
-  "name": "Wild GraphQL Datasource",
+  "name": "Wild GraphQL Data Source",
   "id": "retrodaredevil-wildgraphql-datasource",
   "metrics": true,
   "backend": true,
@@ -9,7 +9,7 @@
   "annotations": true,
   "executable": "gpx_wild_graphql_datasource",
   "info": {
-    "description": "Grafana datasource to interpret GraphQL query results as timeseries data",
+    "description": "Grafana data source to interpret GraphQL query results as timeseries data",
     "author": {
       "name": "Lavender Shannon",
       "url": "https://github.com/retrodaredevil"

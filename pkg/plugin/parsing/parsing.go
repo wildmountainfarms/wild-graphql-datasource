@@ -23,6 +23,11 @@ const (
 	UNKNOWN_ERROR  ParseDataErrorType = 2
 )
 
+// nullValueArrayType is a special case which should only contain null values.
+// This is a type alias so that should it not be converted into a useful type,
+// it will still be accepted by data.NewField
+type nullValueArrayType = []*int8
+
 func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {
 	if len(parsingOption.DataPath) == 0 {
 		return nil, errors.New("data path cannot be empty"), FRIENDLY_ERROR
@@ -81,12 +86,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 
 	for _, dataElement := range dataArray {
 		flatData := jsonnode.NewObject()
-		if !flattenData(dataElement, "", flatData) {
-			// If we cannot flatten the data, we must skip this entry
-			// TODO consider logging this
-			// Data may not be able to be flattened if a null value is present in the data
-			continue
-		}
+		flattenData(dataElement, "", flatData)
 		labels, err := getLabelsFromFlatData(flatData, parsingOption)
 		if err != nil {
 			return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
@@ -102,7 +102,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			existingFieldValues, fieldValuesExist := fieldMap.Get(key)
 
 			if key == parsingOption.TimePath {
-				var timeValue time.Time
+				var timePointer *time.Time
 				switch typedValue := value.(type) {
 				case jsonnode.String:
 					// TODO allow user to customize time format
@@ -112,55 +112,85 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					if err != nil {
 						return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
 					}
-					timeValue = parsedTime
+					timePointer = &parsedTime
 				case jsonnode.Number:
 					epochMillis, err := typedValue.Int64()
 					if err != nil {
 						return nil, err, UNKNOWN_ERROR
 					}
-					timeValue = time.UnixMilli(epochMillis)
+					t := time.UnixMilli(epochMillis)
+					timePointer = &t
+				case jsonnode.Null:
+					timePointer = nil
 				default:
 					// This case should never happen because we never expect other types to pop up here
 					return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
 				}
-				var fieldValues []time.Time
+				var fieldValues []*time.Time
 				if fieldValuesExist {
 					switch typedExistingFieldValues := existingFieldValues.(type) {
-					case []time.Time:
+					case []*time.Time:
 						fieldValues = typedExistingFieldValues
 					default:
 						return nil, errors.New(fmt.Sprintf("This error should never occur. The existing array for time field values is of the type: %v", reflect.TypeOf(existingFieldValues))), UNKNOWN_ERROR
 					}
 				} else {
-					fieldValues = []time.Time{}
+					fieldValues = []*time.Time{}
 				}
-				fieldValues = append(fieldValues, timeValue)
+				fieldValues = append(fieldValues, timePointer)
 				fieldMap.Put(key, fieldValues)
 			} else {
 				if fieldValuesExist {
 					switch typedExistingFieldValues := existingFieldValues.(type) {
-					case []float64:
+					case nullValueArrayType: // This is our special case that we assume only has null values in it
+						switch typedValue := value.(type) {
+						case jsonnode.Null:
+							fieldMap.Put(key, append(typedExistingFieldValues, nil))
+						case jsonnode.Number:
+							number, err := typedValue.Float64()
+							if err != nil {
+								return nil, err, UNKNOWN_ERROR
+							}
+							fieldMap.Put(key, append(make([]*float64, len(typedExistingFieldValues)), &number))
+						case jsonnode.String:
+							stringValue := typedValue.String()
+							fieldMap.Put(key, append(make([]*string, len(typedExistingFieldValues)), &stringValue))
+						case jsonnode.Boolean:
+							boolValue := typedValue.Bool()
+							fieldMap.Put(key, append(make([]*bool, len(typedExistingFieldValues)), &boolValue))
+						default:
+							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is float64, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
+						}
+					case []*float64:
 						switch typedValue := value.(type) {
 						case jsonnode.Number:
 							number, err := typedValue.Float64()
 							if err != nil {
 								return nil, err, UNKNOWN_ERROR
 							}
-							fieldMap.Put(key, append(typedExistingFieldValues, number))
+							fieldMap.Put(key, append(typedExistingFieldValues, &number))
+						case jsonnode.Null:
+							fieldMap.Put(key, append(typedExistingFieldValues, nil))
 						default:
 							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is float64, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
 						}
-					case []string:
+					case []*string:
 						switch typedValue := value.(type) {
 						case jsonnode.String:
-							fieldMap.Put(key, append(typedExistingFieldValues, typedValue.String()))
+							stringValue := typedValue.String()
+							fieldMap.Put(key, append(typedExistingFieldValues, &stringValue))
+						case jsonnode.Null:
+							fieldMap.Put(key, append(typedExistingFieldValues, nil))
 						default:
 							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is string, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
 						}
-					case []bool:
+					case []*bool:
 						switch typedValue := value.(type) {
 						case jsonnode.Boolean:
-							fieldMap.Put(key, append(typedExistingFieldValues, typedValue.Bool()))
+							boolValue := typedValue.Bool()
+							fieldMap.Put(key, append(typedExistingFieldValues, &boolValue))
+						case jsonnode.Null:
+							fieldMap.Put(key, append(typedExistingFieldValues, nil))
 						default:
 							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is bool, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
 						}
@@ -174,11 +204,15 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 						if err != nil {
 							return nil, err, UNKNOWN_ERROR
 						}
-						fieldMap.Put(key, []float64{number})
+						fieldMap.Put(key, []*float64{&number})
 					case jsonnode.String:
-						fieldMap.Put(key, []string{typedValue.String()})
+						stringValue := typedValue.String()
+						fieldMap.Put(key, []*string{&stringValue})
 					case jsonnode.Boolean:
-						fieldMap.Put(key, []bool{typedValue.Bool()})
+						boolValue := typedValue.Bool()
+						fieldMap.Put(key, []*bool{&boolValue})
+					case jsonnode.Null:
+						fieldMap.Put(key, nullValueArrayType{nil})
 					default:
 						return nil, errors.New(fmt.Sprintf("Unsupported and unexpected type for key: %s. Type is: %v", key, reflect.TypeOf(value))), UNKNOWN_ERROR
 					}
@@ -213,20 +247,14 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 	return labels, nil
 }
 
-func flattenArray(array *jsonnode.Array, prefix string, flattenedData *jsonnode.Object) bool {
+func flattenArray(array *jsonnode.Array, prefix string, flattenedData *jsonnode.Object) {
 	for key, value := range *array {
 		baseKey := fmt.Sprintf("%s%d", prefix, key)
 		switch typedValue := value.(type) {
 		case *jsonnode.Object:
-			if !flattenData(typedValue, baseKey+".", flattenedData) {
-				return false
-			}
+			flattenData(typedValue, baseKey+".", flattenedData)
 		case *jsonnode.Array:
-			if !flattenArray(typedValue, baseKey+".", flattenedData) {
-				return false
-			}
-		case jsonnode.Null:
-			return false
+			flattenArray(typedValue, baseKey+".", flattenedData)
 		default:
 			flattenedData.Put(
 				baseKey,
@@ -234,26 +262,18 @@ func flattenArray(array *jsonnode.Array, prefix string, flattenedData *jsonnode.
 			)
 		}
 	}
-	return true
 }
 
-func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *jsonnode.Object) bool {
+func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *jsonnode.Object) {
 	for _, key := range originalData.Keys() {
 		value := originalData.Get(key)
 		switch typedValue := value.(type) {
 		case *jsonnode.Object:
-			if !flattenData(typedValue, prefix+key+".", flattenedData) {
-				return false
-			}
+			flattenData(typedValue, prefix+key+".", flattenedData)
 		case *jsonnode.Array:
-			if !flattenArray(typedValue, prefix+key+".", flattenedData) {
-				return false
-			}
-		case jsonnode.Null:
-			return false
+			flattenArray(typedValue, prefix+key+".", flattenedData)
 		default:
 			flattenedData.Put(prefix+key, typedValue)
 		}
 	}
-	return true
 }

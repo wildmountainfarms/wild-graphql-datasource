@@ -1,8 +1,13 @@
-# Wild GraphQL Datasource
+# Wild GraphQL Data Source
 
-This is a Grafana datasource that aims to make requesting time series data via a GraphQL endpoint easy.
+[![](https://img.shields.io/github/stars/wildmountainfarms/wild-graphql-datasource.svg?style=social)](https://github.com/wildmountainfarms/wild-graphql-datasource)
+[![](https://img.shields.io/github/v/release/wildmountainfarms/wild-graphql-datasource.svg)](https://github.com/wildmountainfarms/wild-graphql-datasource/releases)
+
+This is a Grafana data source that aims to make requesting time series data via a GraphQL endpoint easy.
 The query editor uses [GraphiQL](https://github.com/graphql/graphiql) to provide an intuitive editor with autocompletion.
 Requests are made in the backend allowing support for alerting.
+
+Please report issues on our issues page
 
 Contents
 
@@ -16,6 +21,7 @@ Contents
   * [The use of multiple parsing options](#the-use-of-multiple-parsing-options)
 * [FAQ](#faq)
 * [Common Errors](#common-errors)
+* [Known Issues](#known-issues)
 
 
 ## Features
@@ -186,7 +192,7 @@ Now, change the display name to `${__field.labels["displayName"]}`, where `displ
 
 Alternatively, assuming your label's name is a [valid identifier](https://developer.mozilla.org/en-US/docs/Glossary/Identifier),
 you may instead set the [Display Name](https://grafana.com/docs/grafana/latest/panels-visualizations/configure-standard-options/#display-name)
-to `${__field.labels.displayName}`,
+to `${__field.labels.displayName}`.
 
 ### The use of multiple parsing options
 
@@ -212,12 +218,12 @@ query ($from: Long!, $to: Long!) {
   * Data path: `temperatures`
   * Time path: `epochTimeMillis`
   * Labels
-    *  "displayName": (Field) "sensorName"
+    *  "displayName": (Field) `sensorName`
 * Parsing option 2
   * Data path: `deviceCpuTemperatures`
   * Time path: `dateMillis`
   * Labels
-    * "displayName": (Constant) "CPU"
+    * "displayName": (Constant) `CPU`
 
 What could have taken two queries, you now have done in a single query!
 
@@ -250,9 +256,18 @@ Remember that Grafana transformations are not the preferred way of doing this, a
 
 ## Common errors
 
+This section documents errors that may be common
+
 ### Alerting Specific Errors
 
 * `Failed to evaluate queries and expressions: input data must be a wide series but got type long (input refid)`
   * This error indicates that the query returns more fields than just the time and the datapoint.
   * For alerts, the response from the GraphQL query cannot contain more than the time and datapoint. At this time, you cannot use other attributes from the result to filter the data.
 
+## Known Issues
+
+* Alerting queries can only use fields provided in the response data.
+  * We plan to mitigate this in the future by allowing custom fields to be added to the response
+* When hovering your mouse over a field in the query inside the GraphiQL editor, clicking either the field name or its type will navigate you away from the page, rather than jumping to the reference in the documentation explorer.
+  * Beware of this issue. If you accidentally let this bug navigate you away from the page, your work will be lost since your last dashboard save.
+  * Track this issue here: [grafana #85044](https://github.com/grafana/grafana/issues/85044)

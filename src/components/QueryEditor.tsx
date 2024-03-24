@@ -186,6 +186,16 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
       parsingOptions: newParsingOptions,
     });
   };
+  const swapParsingOption = (index1: number, index2: number) => {
+    const newParsingOptions: ParsingOption[] = [...query.parsingOptions];
+    const temp = newParsingOptions[index1];
+    newParsingOptions[index1] = newParsingOptions[index2];
+    newParsingOptions[index2] = temp;
+    onChange({
+      ...query,
+      parsingOptions: newParsingOptions
+    })
+  };
   const deleteLabelOption = (parsingOptionIndex: number, labelOptionIndex: number) => {
     onChange({
       ...query,
@@ -295,7 +305,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
               onChange({...query, queryText: value});
             }}
             onEditVariables={(variablesJsonString) => {
-              if (variablesJsonString) {
+              if (variablesJsonString.trimStart()) {
                 onChange({...query, variables: variablesJsonString});
               } else {
                 onChange({...query, variables: undefined});
@@ -320,9 +330,14 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
             <InlineField label={`Parsing Option ${parsingOptionIndex + 1}`} labelWidth={LABEL_WIDTH}>
               <div></div>
             </InlineField>
-            {query.parsingOptions.length === 1
-              ? null
-              : <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(parsingOptionIndex)}/>
+            {parsingOptionIndex !== 0 &&
+              <IconButton name={"arrow-up"} onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex - 1)}/>
+            }
+            {parsingOptionIndex < query.parsingOptions.length - 1 &&
+              <IconButton name={"arrow-down"} onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex + 1)}/>
+            }
+            {query.parsingOptions.length !== 1 &&
+              <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(parsingOptionIndex)}/>
             }
           </div>
           <div className="gf-form-inline">

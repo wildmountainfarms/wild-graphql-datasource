@@ -95,38 +95,21 @@ export interface WildGraphQLSecureJsonData {
 }
 
 export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
-  queryText: `query ($sourceId: String!, $from: Long!, $to: Long!) {
-  queryStatus(sourceId: $sourceId, from: $from, to: $to) {
+  queryText: `query ($from: Long!, $to: Long!) {
+  queryStatus(from: $from, to: $to) {
     batteryVoltage {
       dateMillis
-      fragmentIdString
       packet {
         batteryVoltage
-        identifier {
-          representation
-        }
-        identityInfo {
-          displayName
-        }
       }
     }
   }
 }
 `,
-  variables: {
-    "sourceId": "default"
-  },
   parsingOptions: [
     {
       dataPath: "queryStatus.batteryVoltage",
-      timePath: "dateMillis",
-      labelOptions: [
-        {
-          name: "displayName",
-          type: LabelOptionType.FIELD,
-          value: "packet.identityInfo.displayName"
-        }
-      ]
+      timePath: "dateMillis"
     }
   ]
 };
