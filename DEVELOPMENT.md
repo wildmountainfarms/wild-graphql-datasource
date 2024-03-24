@@ -112,6 +112,14 @@ Some random examples of data source plugin source code
 * https://github.com/cnosdb/grafana-datasource-plugin/blob/main/cnosdb/pkg/plugin/query_model.go
 * https://github.com/grafana/grafana-plugin-examples/tree/main/examples/datasource-http-backend
 
+### Updating dependencies
+
+```shell
+npm update
+go get -u
+go mod tidy
+```
+
 ## Dependency Notes
 
 This section contains notes about dependencies.
