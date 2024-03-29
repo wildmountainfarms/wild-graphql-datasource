@@ -7,7 +7,7 @@ This is a Grafana data source that aims to make requesting time series data via 
 The query editor uses [GraphiQL](https://github.com/graphql/graphiql) to provide an intuitive editor with autocompletion.
 Requests are made in the backend allowing support for alerting.
 
-Please report issues on our issues page
+Please report issues on our issues page: [wild-graphql-datasource/issues](https://github.com/wildmountainfarms/wild-graphql-datasource/issues)
 
 Contents
 

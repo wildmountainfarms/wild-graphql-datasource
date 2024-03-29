@@ -14,3 +14,12 @@ Hide the response window only if one if its parents has the hide-execute-button 
 .hide-execute-button div:has(> .graphiql-response) {
   display: none !important; /* Important is necessary because the div element we are trying to select explicitly has its display set to flex*/
 }
+
+
+/*
+Until either https://github.com/grafana/grafana/issues/85044 is fixed or https://github.com/graphql/graphiql/issues/3565
+is fixed, we need to disable pointer events for any info tooltips that have "javascript:void 0" as their href.
+*/
+/*.CodeMirror-info a {*/
+/*  pointer-events: none;*/
+/*}*/

@@ -6,7 +6,7 @@ import {
   getQueryVariablesAsJsonString,
   LabelOption,
   LabelOptionType,
-  ParsingOption,
+  ParsingOption, TimeField,
   WildGraphQLAnyQuery,
   WildGraphQLDataSourceOptions
 } from '../types';
@@ -161,6 +161,36 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
       )
     });
   };
+  const setTimeField = (parsingOptionIndex: number, timeFieldIndex: number, newTimeField: TimeField) => {
+    onChange({
+      ...query,
+      parsingOptions: query.parsingOptions.map((parsingOption, index) => {
+        if (index !== parsingOptionIndex) {
+          return parsingOption;
+        }
+        if (parsingOption.timeFields === undefined) {
+          return {
+            ...parsingOption,
+            timeFields: [newTimeField]
+          }
+        }
+        if (timeFieldIndex >= parsingOption.timeFields.length) {
+          return {
+            ...parsingOption,
+            timeFields: [...parsingOption.timeFields, newTimeField]
+          }
+        }
+        return {
+          ...parsingOption,
+          timeFields: parsingOption.timeFields!.map((timeField, index) => index === timeFieldIndex
+            ? newTimeField
+            : timeField
+          )
+        };
+        }
+      )
+    })
+  };
   const setLabelOption = (parsingOptionIndex: number, labelOptionIndex: number, newLabelOption: LabelOption) => {
     onChange({
       ...query,
@@ -206,7 +236,25 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
             newLabelOptions.push(...parsingOption.labelOptions!.slice(labelOptionIndex + 1, parsingOption.labelOptions!.length));
             return {
               ...parsingOption,
-              labelOptions: newLabelOptions,
+              labelOptions: newLabelOptions || undefined,
+            };
+          }
+          return parsingOption;
+        }
+      )
+    });
+  };
+  const deleteTimeField = (parsingOptionIndex: number, timeFieldIndex: number) => {
+    onChange({
+      ...query,
+      parsingOptions: query.parsingOptions.map((parsingOption, index) => {
+          if (index === parsingOptionIndex) {
+            const newTimeFields: TimeField[] = [];
+            newTimeFields.push(...parsingOption.timeFields!.slice(0, timeFieldIndex));
+            newTimeFields.push(...parsingOption.timeFields!.slice(timeFieldIndex + 1, parsingOption.timeFields!.length));
+            return {
+              ...parsingOption,
+              timeFields: newTimeFields,
             };
           }
           return parsingOption;
@@ -220,7 +268,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
     const lastParsingOption = query.parsingOptions.length === 0
       ? undefined
       : query.parsingOptions[query.parsingOptions.length - 1];
-    const timePath = lastParsingOption === undefined ? "time.path" : lastParsingOption.timePath;
+    const timePaths = lastParsingOption === undefined ? undefined : lastParsingOption.timeFields;
     const labelOptions = lastParsingOption === undefined
       ? undefined
       : lastParsingOption?.labelOptions?.map(labelOption => ({
@@ -230,8 +278,8 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
       }));
     newParsingOptions.push({
       "dataPath": "data.path",
-      "timePath": timePath,
-      labelOptions
+      "timeFields": timePaths,
+      labelOptions: labelOptions || undefined
     });
     onChange({
       ...query,
@@ -273,6 +321,15 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
       addNewLabel();
     }
   };
+  // const cleanUpTimePaths = () => {
+  //   onChange({
+  //     ...query,
+  //     parsingOptions: query.parsingOptions.map(parsingOption => ({
+  //       ...parsingOption,
+  //       timePaths: parsingOption.timePaths?.filter(timePath => timePath != "") || undefined
+  //     }))
+  //   });
+  // };
 
   const currentOperationName = editorContext?.queryEditor?.operationName;
   useEffect(() => {
@@ -325,87 +382,111 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
       </div>
       <h3 className="page-heading">Parsing Options</h3>
       <div className="gf-form-group">
-        {query.parsingOptions.map((parsingOption, parsingOptionIndex) => <>
-          <div className="gf-form-inline" style={{marginTop: "1em"}}>
-            <InlineField label={`Parsing Option ${parsingOptionIndex + 1}`} labelWidth={LABEL_WIDTH}>
-              <div></div>
-            </InlineField>
-            {parsingOptionIndex !== 0 &&
-              <IconButton name={"arrow-up"} onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex - 1)}/>
+        {query.parsingOptions.map((parsingOption, parsingOptionIndex) => {
+          const displayedTimeFields = [
+            ...(parsingOption.timeFields ?? []),
+            {
+              timePath: ""
             }
-            {parsingOptionIndex < query.parsingOptions.length - 1 &&
-              <IconButton name={"arrow-down"} onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex + 1)}/>
-            }
-            {query.parsingOptions.length !== 1 &&
-              <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(parsingOptionIndex)}/>
-            }
-          </div>
-          <div className="gf-form-inline">
-            <InlineField label="Data Path" labelWidth={LABEL_WIDTH}
-                         tooltip="Dot-delimited path to an array nested in the root of the JSON response.">
-              <Input
-                onChange={event => setParsingOption(parsingOptionIndex, {
-                  ...parsingOption,
-                  dataPath: event.currentTarget.value
-                })}
-                value={parsingOption.dataPath ?? ''}
-                width={INPUT_WIDTH}/>
-            </InlineField>
-          </div>
-          <div className="gf-form-inline">
-            <InlineField label="Time Path" labelWidth={LABEL_WIDTH}
-                         tooltip="Dot-delimited path to the time field relative to the data path">
-              <Input
-                onChange={event => setParsingOption(parsingOptionIndex, {
-                  ...parsingOption,
-                  timePath: event.currentTarget.value
-                })}
-                value={parsingOption.timePath ?? ''}
-                width={INPUT_WIDTH}/>
-            </InlineField>
-          </div>
-          {parsingOption.labelOptions?.map((labelOption, labelOptionIndex) => <>
+          ];
+          return <>
+            <div className="gf-form-inline" style={{marginTop: "1em"}}>
+              <InlineField label={`Parsing Option ${parsingOptionIndex + 1}`} labelWidth={LABEL_WIDTH}>
+                <div></div>
+              </InlineField>
+              {parsingOptionIndex !== 0 &&
+                <IconButton name={"arrow-up"}
+                            onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex - 1)}/>
+              }
+              {parsingOptionIndex < query.parsingOptions.length - 1 &&
+                <IconButton name={"arrow-down"}
+                            onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex + 1)}/>
+              }
+              {query.parsingOptions.length !== 1 &&
+                <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(parsingOptionIndex)}/>
+              }
+            </div>
             <div className="gf-form-inline">
-              <InlineField
-                label={`Label: "${labelOption.name}"`}
-                tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
-                labelWidth={LABEL_WIDTH}
-              >
-                <Select
-                  width={16}
-                  options={[
-                    { label: "Constant", value: LabelOptionType.CONSTANT },
-                    { label: "Field", value: LabelOptionType.FIELD },
-                  ]}
-                  value={labelOption.type}
-                  onChange={(value) => {
-                    const newType = value.value;
-                    if (newType !== undefined) {
+              <InlineField label="Data Path" labelWidth={LABEL_WIDTH}
+                           tooltip="Dot-delimited path to an array nested in the root of the JSON response.">
+                <Input
+                  onChange={event => setParsingOption(parsingOptionIndex, {
+                    ...parsingOption,
+                    dataPath: event.currentTarget.value
+                  })}
+                  value={parsingOption.dataPath ?? ''}
+                  width={INPUT_WIDTH}/>
+              </InlineField>
+            </div>
+            {displayedTimeFields.map((timeField, timeFieldIndex) => <>
+              <div className="gf-form-inline">
+                <InlineField
+                  label={timeFieldIndex === displayedTimeFields.length - 1 ? "Add Time Path" : "Time Path"}
+                  labelWidth={LABEL_WIDTH}
+                  tooltip="Dot-delimited path to the time field relative to the data path"
+                >
+                  <Input
+                    onChange={event => setTimeField(parsingOptionIndex, timeFieldIndex, {
+                      ...timeField,
+                      timePath: event.currentTarget.value
+                    })}
+                    value={timeField.timePath}
+                    onBlur={event => {
+                      if (timeField.timePath === "") {
+                        deleteTimeField(parsingOptionIndex, timeFieldIndex);
+                      }
+                    }}
+                    width={INPUT_WIDTH}/>
+                </InlineField>
+                {/*TODO add time format option here*/}
+                {timeFieldIndex !== displayedTimeFields.length - 1 &&
+                  <IconButton name={"minus"} onClick={() => deleteTimeField(parsingOptionIndex, timeFieldIndex)}/>
+                }
+              </div>
+            </>)}
+            {parsingOption.labelOptions?.map((labelOption, labelOptionIndex) => <>
+              <div className="gf-form-inline">
+                <InlineField
+                  label={`Label: "${labelOption.name}"`}
+                  tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
+                  labelWidth={LABEL_WIDTH}
+                >
+                  <Select
+                    width={16}
+                    options={[
+                      {label: "Constant", value: LabelOptionType.CONSTANT},
+                      {label: "Field", value: LabelOptionType.FIELD},
+                    ]}
+                    value={labelOption.type}
+                    onChange={(value) => {
+                      const newType = value.value;
+                      if (newType !== undefined) {
+                        setLabelOption(parsingOptionIndex, labelOptionIndex, {
+                          ...labelOption,
+                          type: newType,
+                        });
+                      }
+                    }}
+                  />
+
+                </InlineField>
+                <InlineField label="Value" labelWidth={8}>
+                  <Input
+                    width={INPUT_WIDTH}
+                    value={labelOption.value}
+                    onChange={(event) => {
                       setLabelOption(parsingOptionIndex, labelOptionIndex, {
                         ...labelOption,
-                        type: newType,
-                      });
-                    }
-                  }}
-                />
-
-              </InlineField>
-              <InlineField label="Value" labelWidth={8}>
-                <Input
-                  width={INPUT_WIDTH}
-                  value={labelOption.value}
-                  onChange={(event) => {
-                    setLabelOption(parsingOptionIndex, labelOptionIndex, {
-                      ...labelOption,
-                      value: event.currentTarget.value,
-                    })
-                  }}
-                />
-              </InlineField>
-              <IconButton name={"minus"} onClick={() => deleteLabelOption(parsingOptionIndex, labelOptionIndex)}/>
-            </div>
-          </>)}
-        </>)}
+                        value: event.currentTarget.value,
+                      })
+                    }}
+                  />
+                </InlineField>
+                <IconButton name={"minus"} onClick={() => deleteLabelOption(parsingOptionIndex, labelOptionIndex)}/>
+              </div>
+            </>)}
+          </>;
+        })}
 
         {/*https://developers.grafana.com/ui/latest/index.html?path=/docs/buttons-button--examples*/}
         {/*https://grafana.com/developers/saga/Components/Buttons/Button*/}

@@ -85,9 +85,7 @@
           },
           "parsingOptions": [
             {
-              "dataPath": "allFilms.films",
-              "labelOptions": [],
-              "timePath": ""
+              "dataPath": "allFilms.films"
             }
           ],
           "queryText": "query {\n  allFilms {\n    films {\n      Title:title\n      Directory:director\n      Release:releaseDate\n    }\n  }\n}\n",
@@ -160,9 +158,7 @@
           },
           "parsingOptions": [
             {
-              "dataPath": "film",
-              "labelOptions": [],
-              "timePath": ""
+              "dataPath": "film"
             }
           ],
           "queryText": "query {film(id: \"ZmlsbXM6MQ==\") {openingCrawl}}\n",
@@ -258,8 +254,11 @@
           "parsingOptions": [
             {
               "dataPath": "allFilms.films",
-              "labelOptions": [],
-              "timePath": "created"
+              "timeFields": [
+                {
+                  "timePath": "created"
+                }
+              ]
             }
           ],
           "queryText": "query {\n  allFilms {\n    films {\n      Title:title\n      episodeID\n      created\n    }\n  }\n}\n",
@@ -357,9 +356,7 @@
           },
           "parsingOptions": [
             {
-              "dataPath": "allPlanets.planets",
-              "labelOptions": [],
-              "timePath": ""
+              "dataPath": "allPlanets.planets"
             }
           ],
           "queryText": "query {\n  allPlanets {\n    planets {\n      name\n      population\n    }\n  }\n}\n",
@@ -450,9 +447,7 @@
           },
           "parsingOptions": [
             {
-              "dataPath": "allStarships.starships",
-              "labelOptions": [],
-              "timePath": ""
+              "dataPath": "allStarships.starships"
             }
           ],
           "queryText": "query {\n  allStarships {\n    starships {\n      name\n      passengers\n      filmConnection {\n        totalCount\n      }\n    }\n  }\n}\n",
@@ -463,7 +458,7 @@
       "type": "table"
     }
   ],
-  "refresh": false,
+  "refresh": "",
   "schemaVersion": 39,
   "tags": [],
   "templating": {
@@ -496,7 +491,7 @@
   "timepicker": {},
   "timezone": "",
   "title": "Star Wars Film Info",
-  "uid": "cf9216bb-502f-41c6-ba11-44999a07a37b",
-  "version": 6,
+  "uid": "a3c397f1-e970-4242-b470-9fda26e91b5f",
+  "version": 2,
   "weekStart": ""
 }

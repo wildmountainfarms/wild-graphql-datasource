@@ -101,7 +101,8 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			value := flatData.Get(key)
 			existingFieldValues, fieldValuesExist := fieldMap.Get(key)
 
-			if key == parsingOption.TimePath {
+			timeField := parsingOption.GetTimeField(key)
+			if timeField != nil {
 				var timePointer *time.Time
 				switch typedValue := value.(type) {
 				case jsonnode.String:

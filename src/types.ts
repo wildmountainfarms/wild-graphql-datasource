@@ -3,6 +3,11 @@ import { DataQuery } from '@grafana/schema';
 
 type VariablesType = string | Record<string, any>;
 
+export interface TimeField {
+  timePath: string;
+  // TODO add a time format option here
+}
+
 export interface LabelOption {
   name: string;
   type: LabelOptionType;
@@ -16,11 +21,15 @@ export enum LabelOptionType {
 }
 
 export interface ParsingOption {
+  // TODO make sure an empty string is valid in the backend like this says
+  /** Required. The path to the array of data or object of data. Note: An empty string is valid -- it refers to the top-most data */
   dataPath: string;
-  // TODO replace timePath with timePaths
-  /** Required. The path to the time */
-  timePath: string;
-
+  /**
+   * The path to the time. An undefined value or an empty array means that no fields will be interpreted as time fields.
+   *
+   * If one or multiple of the time paths are blank, those blank time paths should not be treated as time paths and may be disregarded during processing.
+   */
+  timeFields?: TimeField[];
   /** The label options. The number of label options and the names of the label options should be consistent between parsing options for the best user experience.*/
   labelOptions?: LabelOption[];
 }
@@ -94,6 +103,7 @@ export interface WildGraphQLSecureJsonData {
   // TODO We should support secret fields that can be passed to GraphQL queries as arguments
 }
 
+// TODO don't use Long here
 export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   queryText: `query ($from: Long!, $to: Long!) {
   queryStatus(from: $from, to: $to) {
@@ -109,7 +119,7 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   parsingOptions: [
     {
       dataPath: "queryStatus.batteryVoltage",
-      timePath: "dateMillis"
+      timeFields: [{ timePath: "dateMillis" }]
     }
   ]
 };
@@ -129,7 +139,7 @@ export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
   parsingOptions: [
     {
       dataPath: "queryStatus.batteryVoltage",
-      timePath: "dateMillis"
+      timeFields: [{ timePath: "dateMillis" }]
     }
   ]
 };
@@ -149,7 +159,7 @@ export const DEFAULT_ANNOTATION_QUERY: Partial<WildGraphQLAnnotationQuery> = {
   parsingOptions: [
     {
       dataPath: "queryEvent.mateCommand",
-      timePath: "dateMillis"
+      timeFields: [{ timePath: "dateMillis" }]
     }
   ]
 };
