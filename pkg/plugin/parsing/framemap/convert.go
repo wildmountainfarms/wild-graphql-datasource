@@ -12,11 +12,18 @@ import (
 	"time"
 )
 
-func (node *frameNode) getAllFields() []string {
+func (f *FrameMap) getAllFields() []string {
+	// The fields are consistent for a given frame map, but may be different between frame maps
+	//   (Remember that a FrameMap maps to a single parsing option, so within a given parsing option,
+	//   fields are consistent)
 	order := fieldsort.New()
 
-	for _, row := range node.rows {
-		order.State(row.FieldOrder)
+	frameMapIterator := f.data.Iterator()
+	for frameMapIterator.Next() {
+		node := frameMapIterator.Value()
+		for _, row := range node.rows {
+			order.State(row.FieldOrder)
+		}
 	}
 
 	return order.GetOrder()
@@ -55,34 +62,42 @@ func createFieldForJsonNode(node *frameNode, field string) *data.Field {
 	return data.NewField(field, node.labels, values)
 }
 
-func (node *frameNode) createField(field string) *data.Field {
+func (f *FrameMap) createField(targetNode *frameNode, field string) *data.Field {
 	var foundNull = false
-	for _, row := range node.rows {
-		if value, exists := row.FieldMap[field]; exists {
-			switch value.(type) {
-			case jsonnode.Null:
-				foundNull = true
-			case jsonnode.Number:
-				return createFieldForJsonNode(node, field)
-			case time.Time:
-				return createFieldForNativeType[time.Time](node, field)
-			case string:
-				return createFieldForNativeType[string](node, field)
-			case bool:
-				return createFieldForNativeType[bool](node, field)
-			case float64:
-				return createFieldForNativeType[float64](node, field)
-			default:
-				message := fmt.Sprintf("unknown type: %v", reflect.TypeOf(value))
-				log.DefaultLogger.Error(message)
-				panic(errors.New(message))
+
+	// Although we don't have to iterate over all the nodes within a FrameMap,
+	//   doing so makes sure there are consistent fields between the data.Frames we will return
+	frameMapIterator := f.data.Iterator()
+	for frameMapIterator.Next() {
+		n := frameMapIterator.Value()
+		for _, row := range n.rows {
+			if value, exists := row.FieldMap[field]; exists {
+				switch value.(type) {
+				case jsonnode.Null:
+					foundNull = true
+				case jsonnode.Number:
+					return createFieldForJsonNode(targetNode, field)
+				case time.Time:
+					return createFieldForNativeType[time.Time](targetNode, field)
+				case string:
+					return createFieldForNativeType[string](targetNode, field)
+				case bool:
+					return createFieldForNativeType[bool](targetNode, field)
+				case float64:
+					return createFieldForNativeType[float64](targetNode, field)
+				default:
+					message := fmt.Sprintf("unknown type: %v", reflect.TypeOf(value))
+					log.DefaultLogger.Error(message)
+					panic(errors.New(message))
+				}
 			}
 		}
 	}
+
 	if foundNull {
-		return createFieldForJsonNode(node, field)
+		return createFieldForJsonNode(targetNode, field)
 	}
-	log.DefaultLogger.Info("Could not find field")
+	log.DefaultLogger.Error("Could not find field")
 	panic(fmt.Errorf("could not find field: %s", field))
 }
 
@@ -96,6 +111,7 @@ func (f *FrameMap) ToFrames() []*data.Frame {
 	// NOTE: The order of the frames here determines the order they appear in the legend in Grafana
 	//   This is why we use a linkedhashmap.Map everywhere, as it maintains order.
 	var r []*data.Frame
+	fields := f.getAllFields()
 	frameMapIterator := f.data.Iterator()
 	for frameMapIterator.Next() {
 		node := frameMapIterator.Value()
@@ -103,8 +119,8 @@ func (f *FrameMap) ToFrames() []*data.Frame {
 		frameName := fmt.Sprintf("response %v", node.labels)
 		frame := data.NewFrame(frameName)
 
-		for _, field := range node.getAllFields() {
-			frame.Fields = append(frame.Fields, node.createField(field))
+		for _, field := range fields {
+			frame.Fields = append(frame.Fields, f.createField(node, field))
 		}
 		r = append(r, frame)
 	}
