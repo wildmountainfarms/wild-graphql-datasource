@@ -3,7 +3,6 @@ package parsing
 import (
 	"errors"
 	"fmt"
-	"github.com/emirpasic/gods/v2/maps/linkedhashmap"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/framemap"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
@@ -22,11 +21,6 @@ const (
 	FRIENDLY_ERROR ParseDataErrorType = 1
 	UNKNOWN_ERROR  ParseDataErrorType = 2
 )
-
-// nullValueArrayType is a special case which should only contain null values.
-// This is a type alias so that should it not be converted into a useful type,
-// it will still be accepted by data.NewField
-type nullValueArrayType = []*int8
 
 func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {
 	if len(parsingOption.DataPath) == 0 {
@@ -91,15 +85,11 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 		if err != nil {
 			return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
 		}
-		var fieldMap, fieldMapExists = fm.Get(labels)
-		if !fieldMapExists {
-			fieldMap = linkedhashmap.New[string, any]()
-			fm.Put(labels, fieldMap)
-		}
+		row := fm.NewRow(labels)
+		row.FieldOrder = flatData.Keys()
 
 		for _, key := range flatData.Keys() {
 			value := flatData.Get(key)
-			existingFieldValues, fieldValuesExist := fieldMap.Get(key)
 
 			timeField := parsingOption.GetTimeField(key)
 			if timeField != nil {
@@ -127,97 +117,9 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					// This case should never happen because we never expect other types to pop up here
 					return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
 				}
-				var fieldValues []*time.Time
-				if fieldValuesExist {
-					switch typedExistingFieldValues := existingFieldValues.(type) {
-					case []*time.Time:
-						fieldValues = typedExistingFieldValues
-					default:
-						return nil, errors.New(fmt.Sprintf("This error should never occur. The existing array for time field values is of the type: %v", reflect.TypeOf(existingFieldValues))), UNKNOWN_ERROR
-					}
-				} else {
-					fieldValues = []*time.Time{}
-				}
-				fieldValues = append(fieldValues, timePointer)
-				fieldMap.Put(key, fieldValues)
+				row.TimeMap[key] = timePointer
 			} else {
-				if fieldValuesExist {
-					switch typedExistingFieldValues := existingFieldValues.(type) {
-					case nullValueArrayType: // This is our special case that we assume only has null values in it
-						switch typedValue := value.(type) {
-						case jsonnode.Null:
-							fieldMap.Put(key, append(typedExistingFieldValues, nil))
-						case jsonnode.Number:
-							number, err := typedValue.Float64()
-							if err != nil {
-								return nil, err, UNKNOWN_ERROR
-							}
-							fieldMap.Put(key, append(make([]*float64, len(typedExistingFieldValues)), &number))
-						case jsonnode.String:
-							stringValue := typedValue.String()
-							fieldMap.Put(key, append(make([]*string, len(typedExistingFieldValues)), &stringValue))
-						case jsonnode.Boolean:
-							boolValue := typedValue.Bool()
-							fieldMap.Put(key, append(make([]*bool, len(typedExistingFieldValues)), &boolValue))
-						default:
-							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is float64, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
-						}
-					case []*float64:
-						switch typedValue := value.(type) {
-						case jsonnode.Number:
-							number, err := typedValue.Float64()
-							if err != nil {
-								return nil, err, UNKNOWN_ERROR
-							}
-							fieldMap.Put(key, append(typedExistingFieldValues, &number))
-						case jsonnode.Null:
-							fieldMap.Put(key, append(typedExistingFieldValues, nil))
-						default:
-							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is float64, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
-						}
-					case []*string:
-						switch typedValue := value.(type) {
-						case jsonnode.String:
-							stringValue := typedValue.String()
-							fieldMap.Put(key, append(typedExistingFieldValues, &stringValue))
-						case jsonnode.Null:
-							fieldMap.Put(key, append(typedExistingFieldValues, nil))
-						default:
-							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is string, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
-						}
-					case []*bool:
-						switch typedValue := value.(type) {
-						case jsonnode.Boolean:
-							boolValue := typedValue.Bool()
-							fieldMap.Put(key, append(typedExistingFieldValues, &boolValue))
-						case jsonnode.Null:
-							fieldMap.Put(key, append(typedExistingFieldValues, nil))
-						default:
-							return nil, errors.New(fmt.Sprintf("Existing field values for key: %s is bool, but got value with type: %v", key, reflect.TypeOf(value))), FRIENDLY_ERROR
-						}
-					default:
-						return nil, errors.New(fmt.Sprintf("This error should never occur. The existing array for time field values is of the type: %v", reflect.TypeOf(existingFieldValues))), UNKNOWN_ERROR
-					}
-				} else {
-					switch typedValue := value.(type) {
-					case jsonnode.Number:
-						number, err := typedValue.Float64()
-						if err != nil {
-							return nil, err, UNKNOWN_ERROR
-						}
-						fieldMap.Put(key, []*float64{&number})
-					case jsonnode.String:
-						stringValue := typedValue.String()
-						fieldMap.Put(key, []*string{&stringValue})
-					case jsonnode.Boolean:
-						boolValue := typedValue.Bool()
-						fieldMap.Put(key, []*bool{&boolValue})
-					case jsonnode.Null:
-						fieldMap.Put(key, nullValueArrayType{nil})
-					default:
-						return nil, errors.New(fmt.Sprintf("Unsupported and unexpected type for key: %s. Type is: %v", key, reflect.TypeOf(value))), UNKNOWN_ERROR
-					}
-				}
+				row.FieldMap[key] = value.Serialize()
 			}
 		}
 	}

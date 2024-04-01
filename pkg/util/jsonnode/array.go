@@ -24,6 +24,19 @@ func (a *Array) String() string {
 	}
 	return "Array [" + strings.Join(stringArray, ", ") + "]"
 }
+func (a *Array) Serialize() json.RawMessage {
+	var convertedArray [][]byte
+	for _, node := range *a {
+		convertedArray = append(convertedArray, node.Serialize())
+	}
+	var r = []byte{'['}
+	r = append(r, bytes.Join(convertedArray, []byte{','})...)
+	r = append(r, ']')
+	return r
+}
+func (a *Array) Marshal() ([]byte, error) {
+	return a.Serialize(), nil
+}
 
 func (a *Array) decodeJSON(startToken json.Token, decoder *json.Decoder) error {
 	if startToken != json.Delim('[') {

@@ -74,6 +74,21 @@ func (o *Object) String() string {
 	}
 	return strings.Join(result, ", ")
 }
+func (o *Object) Serialize() json.RawMessage {
+	var r = []byte{'{'}
+	for _, key := range o.Keys() {
+		value := o.Get(key)
+
+		r = append(r, []byte(String(key).Serialize())...)
+		r = append(r, ':')
+		r = append(r, []byte(value.Serialize())...)
+	}
+	r = append(r, '}')
+	return r
+}
+func (o *Object) Marshal() ([]byte, error) {
+	return o.Serialize(), nil
+}
 
 func (o *Object) Keys() []string {
 	return o.order

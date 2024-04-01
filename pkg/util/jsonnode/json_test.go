@@ -66,6 +66,33 @@ func TestPrimitivesAndNestedArray(t *testing.T) {
 		}
 	}
 }
+func TestVeryNestedData(t *testing.T) {
+	jsonString := `
+
+{
+  "data": {
+    "queryStatus": {
+      "batteryVoltage": [
+        {
+          "dateMillis": 1704333209773,
+          "packet": {
+            "batteryVoltage": 27.8
+          }
+        }
+      ]
+    }
+  }
+}
+`
+	var object = NewObject()
+	err := json.Unmarshal([]byte(jsonString), &object)
+	if err != nil {
+		t.Fatal("Could not unmarshal JSON", err)
+		return
+	}
+
+}
+
 func TestObject(t *testing.T) {
 	jsonString := `
 {
@@ -147,29 +174,9 @@ func TestObject(t *testing.T) {
 
 }
 
-func TestVeryNestedData(t *testing.T) {
-	jsonString := `
-
-{
-  "data": {
-    "queryStatus": {
-      "batteryVoltage": [
-        {
-          "dateMillis": 1704333209773,
-          "packet": {
-            "batteryVoltage": 27.8
-          }
-        }
-      ]
-    }
-  }
-}
-`
-	var object = NewObject()
-	err := json.Unmarshal([]byte(jsonString), &object)
-	if err != nil {
-		t.Fatal("Could not unmarshal JSON", err)
-		return
+func TestStringSerialize(t *testing.T) {
+	value := String("asdf")
+	if string(value.Serialize()) != "\"asdf\"" {
+		t.Fatal("Incorrect string serialization")
 	}
-
 }

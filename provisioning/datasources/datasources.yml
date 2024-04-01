@@ -1,7 +1,7 @@
 apiVersion: 1
 
 datasources:
-  - name: 'wild-graphql-datasource'
+  - name: 'Custom GraphQL Data Source'
     type: 'retrodaredevil-wildgraphql-datasource'
     access: proxy
     isDefault: false
@@ -13,6 +13,15 @@ datasources:
     uid: '9c6ae4eb-3ec7-4aed-a2da-ee51f9303dc8'  # A consistent ID allows this to be referenced in the provisioned dashboard
     # https://studio.apollographql.com/public/star-wars-swapi/variant/current/home
     url: 'https://swapi-graphql.netlify.app/.netlify/functions/index'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
+  - name: 'SolarThing GraphQL'
+    type: 'retrodaredevil-wildgraphql-datasource'
+    uid: 'fa66cf68-c3d8-4490-a89d-0c3b6a87fff8'
+    url: ''  # do not fill URL because there are no public SolarThing APIs
     access: proxy
     isDefault: false
     orgId: 1

@@ -2,6 +2,7 @@ package jsonnode
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 )
 
@@ -10,6 +11,12 @@ type Number json.Number
 func (_ Number) sealed() {}
 func (n Number) String() string {
 	return n.Number().String()
+}
+func (n Number) Serialize() json.RawMessage {
+	return json.RawMessage(n.Number())
+}
+func (n Number) Marshal() ([]byte, error) {
+	return n.Serialize(), nil
 }
 
 func (n Number) Number() json.Number {
@@ -37,6 +44,12 @@ func (b Boolean) String() string {
 	}
 	return "false"
 }
+func (b Boolean) Serialize() json.RawMessage {
+	return json.RawMessage(b.String())
+}
+func (b Boolean) Marshal() ([]byte, error) {
+	return b.Serialize(), nil
+}
 func (b Boolean) Bool() bool {
 	return bool(b)
 }
@@ -48,6 +61,16 @@ func (_ String) sealed() {}
 func (s String) String() string {
 	return string(s)
 }
+func (s String) Serialize() json.RawMessage {
+	escaped, err := json.Marshal(s.String())
+	if err != nil {
+		panic(fmt.Errorf("error JSON-escaping string: %w", err))
+	}
+	return escaped
+}
+func (s String) Marshal() ([]byte, error) {
+	return s.Serialize(), nil
+}
 
 type Null bool
 
@@ -57,6 +80,12 @@ func (_ Null) sealed() {}
 
 func (n Null) String() string {
 	return "null"
+}
+func (n Null) Serialize() json.RawMessage {
+	return json.RawMessage("null")
+}
+func (n Null) Marshal() ([]byte, error) {
+	return n.Serialize(), nil
 }
 
 func parsePrimitive(token json.Token) Node {
