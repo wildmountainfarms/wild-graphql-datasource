@@ -117,9 +117,22 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					// This case should never happen because we never expect other types to pop up here
 					return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
 				}
-				row.TimeMap[key] = timePointer
+				if timePointer == nil {
+					row.FieldMap[key] = jsonnode.NULL
+				} else {
+					row.FieldMap[key] = *timePointer
+				}
 			} else {
-				row.FieldMap[key] = value.Serialize()
+				switch typedValue := value.(type) {
+				case jsonnode.String:
+					row.FieldMap[key] = typedValue.String()
+				case jsonnode.Boolean:
+					row.FieldMap[key] = typedValue.Bool()
+				case jsonnode.Null, jsonnode.Number:
+					row.FieldMap[key] = typedValue
+				default:
+					return nil, errors.New(fmt.Sprintf("Unsupported type! type: %v", reflect.TypeOf(typedValue))), UNKNOWN_ERROR
+				}
 			}
 		}
 	}

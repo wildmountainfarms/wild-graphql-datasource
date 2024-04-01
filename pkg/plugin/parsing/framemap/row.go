@@ -1,20 +1,20 @@
 package framemap
 
-import (
-	"encoding/json"
-	"time"
-)
-
 type Row struct {
 	FieldOrder []string
-	FieldMap   map[string]json.RawMessage
-	TimeMap    map[string]*time.Time
+	// The field map. Supported types are as follows:
+	//
+	//  jsonnode.Number, jsonnode.Null
+	//
+	//  string, bool, float64, time.Time
+	//
+	// Please make sure you do not use pointer types.
+	FieldMap map[string]any
 }
 
 func newRow() *Row {
 	row := Row{
-		FieldMap: map[string]json.RawMessage{},
-		TimeMap:  map[string]*time.Time{},
+		FieldMap: map[string]any{},
 	}
 	return &row
 }

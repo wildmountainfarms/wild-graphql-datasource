@@ -2,9 +2,13 @@ package framemap
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/fieldsort"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
+	"reflect"
 	"time"
 )
 
@@ -18,41 +22,68 @@ func (node *frameNode) getAllFields() []string {
 	return order.GetOrder()
 }
 
-func (node *frameNode) isTimeField(field string) bool {
+func createFieldForNativeType[T comparable](node *frameNode, field string) *data.Field {
+	var values []*T
 	for _, row := range node.rows {
-		if _, exists := row.TimeMap[field]; exists {
-			return true
-		}
-		if _, exists := row.FieldMap[field]; exists {
-			return false
-		}
-	}
-	return false
-}
-func (node *frameNode) createField(field string) *data.Field {
-	if node.isTimeField(field) {
-		var values []*time.Time
-		for _, row := range node.rows {
-			value, exists := row.TimeMap[field]
-			if exists {
-				values = append(values, value)
-			} else {
+		rawValue, exists := row.FieldMap[field]
+		if exists {
+			switch rawValue.(type) {
+			case jsonnode.Null:
 				values = append(values, nil)
-			}
-		}
-		return data.NewField(field, node.labels, values)
-	} else {
-		var values []*json.RawMessage
-		for _, row := range node.rows {
-			value, exists := row.FieldMap[field]
-			if exists {
+			default:
+				value := rawValue.(T)
 				values = append(values, &value)
-			} else {
-				values = append(values, nil)
+			}
+		} else {
+			values = append(values, nil)
+		}
+	}
+	return data.NewField(field, node.labels, values)
+}
+func createFieldForJsonNode(node *frameNode, field string) *data.Field {
+	var values []*json.RawMessage
+	for _, row := range node.rows {
+		rawValue, exists := row.FieldMap[field]
+		if exists {
+			value := rawValue.(jsonnode.Node)
+			serializedValue := value.Serialize()
+			values = append(values, &serializedValue)
+		} else {
+			values = append(values, nil)
+		}
+	}
+	return data.NewField(field, node.labels, values)
+}
+
+func (node *frameNode) createField(field string) *data.Field {
+	var foundNull = false
+	for _, row := range node.rows {
+		if value, exists := row.FieldMap[field]; exists {
+			switch value.(type) {
+			case jsonnode.Null:
+				foundNull = true
+			case jsonnode.Number:
+				return createFieldForJsonNode(node, field)
+			case time.Time:
+				return createFieldForNativeType[time.Time](node, field)
+			case string:
+				return createFieldForNativeType[string](node, field)
+			case bool:
+				return createFieldForNativeType[bool](node, field)
+			case float64:
+				return createFieldForNativeType[float64](node, field)
+			default:
+				message := fmt.Sprintf("unknown type: %v", reflect.TypeOf(value))
+				log.DefaultLogger.Error(message)
+				panic(errors.New(message))
 			}
 		}
-		return data.NewField(field, node.labels, values)
 	}
+	if foundNull {
+		return createFieldForJsonNode(node, field)
+	}
+	log.DefaultLogger.Info("Could not find field")
+	panic(fmt.Errorf("could not find field: %s", field))
 }
 
 func (f *FrameMap) ToFrames() []*data.Frame {
