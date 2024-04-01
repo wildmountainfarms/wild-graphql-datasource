@@ -3,10 +3,12 @@ import {Button, IconButton, InlineField, Input, Select} from '@grafana/ui';
 import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
 import {
+  DEFAULT_LABEL_OPTION_FIELD_CONFIG,
   getQueryVariablesAsJsonString,
   LabelOption,
   LabelOptionType,
-  ParsingOption, TimeField,
+  ParsingOption,
+  TimeField,
   WildGraphQLAnyQuery,
   WildGraphQLDataSourceOptions
 } from '../types';
@@ -444,47 +446,101 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
                 }
               </div>
             </>)}
-            {parsingOption.labelOptions?.map((labelOption, labelOptionIndex) => <>
-              <div className="gf-form-inline">
-                <InlineField
-                  label={`Label: "${labelOption.name}"`}
-                  tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
-                  labelWidth={LABEL_WIDTH}
-                >
-                  <Select
-                    width={16}
-                    options={[
-                      {label: "Constant", value: LabelOptionType.CONSTANT},
-                      {label: "Field", value: LabelOptionType.FIELD},
-                    ]}
-                    value={labelOption.type}
-                    onChange={(value) => {
-                      const newType = value.value;
-                      if (newType !== undefined) {
+            {parsingOption.labelOptions?.map((labelOption, labelOptionIndex) => {
+              // fieldConfig and fieldConfigSelection are undefined ONLY when labelOption.type is CONSTANT
+              const fieldConfig = labelOption.type === LabelOptionType.CONSTANT
+                ? undefined
+                : (labelOption.fieldConfig ?? DEFAULT_LABEL_OPTION_FIELD_CONFIG);
+              const fieldConfigSelection = fieldConfig === undefined
+                ? undefined
+                : fieldConfig.required
+                  ? "required"
+                  : fieldConfig.defaultValue === undefined ? "omit" : "default";
+              return <>
+                <div className="gf-form-inline">
+                  <InlineField
+                    label={`Label: "${labelOption.name}"`}
+                    tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
+                    labelWidth={LABEL_WIDTH}
+                  >
+                    <Select
+                      width={16}
+                      options={[
+                        {label: "Constant", value: LabelOptionType.CONSTANT},
+                        {label: "Field", value: LabelOptionType.FIELD},
+                      ]}
+                      value={labelOption.type}
+                      onChange={(value) => {
+                        const newType = value.value;
+                        if (newType !== undefined) {
+                          setLabelOption(parsingOptionIndex, labelOptionIndex, {
+                            ...labelOption,
+                            type: newType,
+                          });
+                        }
+                      }}
+                    />
+
+                  </InlineField>
+                  <InlineField label="Value" labelWidth={8}>
+                    <Input
+                      width={INPUT_WIDTH}
+                      value={labelOption.value}
+                      onChange={(event) => {
                         setLabelOption(parsingOptionIndex, labelOptionIndex, {
                           ...labelOption,
-                          type: newType,
-                        });
-                      }
-                    }}
-                  />
+                          value: event.currentTarget.value,
+                        })
+                      }}
+                    />
+                  </InlineField>
 
-                </InlineField>
-                <InlineField label="Value" labelWidth={8}>
-                  <Input
-                    width={INPUT_WIDTH}
-                    value={labelOption.value}
-                    onChange={(event) => {
-                      setLabelOption(parsingOptionIndex, labelOptionIndex, {
-                        ...labelOption,
-                        value: event.currentTarget.value,
-                      })
-                    }}
-                  />
-                </InlineField>
-                <IconButton name={"minus"} onClick={() => deleteLabelOption(parsingOptionIndex, labelOptionIndex)}/>
-              </div>
-            </>)}
+                  {fieldConfig &&
+                    <InlineField label="If absent" labelWidth={10}>
+                      <Select
+                        width={16}
+                        options={[
+                          {label: "Error", value: "required"},
+                          {label: "Omit", value: "omit"},
+                          {label: "Use default", value: "default"},
+                        ]}
+                        value={fieldConfigSelection!}
+                        onChange={(value) => {
+                          const newValue = value.value;
+                          if (newValue !== undefined) {
+                            setLabelOption(parsingOptionIndex, labelOptionIndex, {
+                              ...labelOption,
+                              fieldConfig: {
+                                required: newValue === "required",
+                                defaultValue: newValue === "omit" ? undefined : (fieldConfig!.defaultValue ?? "")
+                              }
+                            });
+                          }
+                        }}
+                      />
+                    </InlineField>
+                  }
+                  {fieldConfigSelection === "default" &&
+                    <InlineField label="Default" labelWidth={10}>
+                      <Input
+                        width={INPUT_WIDTH}
+                        value={fieldConfig!.defaultValue!}
+                        onChange={(event) => {
+                          setLabelOption(parsingOptionIndex, labelOptionIndex, {
+                            ...labelOption,
+                            fieldConfig: {
+                              required: false,
+                              defaultValue: event.currentTarget.value
+                            }
+                          })
+                        }}
+                      />
+                    </InlineField>
+                  }
+                  <IconButton name={"minus"} onClick={() => deleteLabelOption(parsingOptionIndex, labelOptionIndex)}/>
+                </div>
+              </>;
+            })}
           </>;
         })}
 

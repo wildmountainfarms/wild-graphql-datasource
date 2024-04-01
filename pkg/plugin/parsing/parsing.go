@@ -150,13 +150,20 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 		case querymodel.FIELD:
 			fieldValue := flatData.Get(labelOption.Value)
 			if fieldValue == nil {
-				return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value))
-			}
-			switch typedFieldValue := fieldValue.(type) {
-			case jsonnode.String:
-				labels[labelOption.Name] = typedFieldValue.String()
-			default:
-				return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue)))
+				fieldConfig := labelOption.FieldConfig
+				if fieldConfig != nil && fieldConfig.Required {
+					return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value))
+				} else if fieldConfig != nil && fieldConfig.DefaultValue != nil {
+					labels[labelOption.Name] = *fieldConfig.DefaultValue
+				}
+				// else omit
+			} else {
+				switch typedFieldValue := fieldValue.(type) {
+				case jsonnode.String:
+					labels[labelOption.Name] = typedFieldValue.String()
+				default:
+					return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue)))
+				}
 			}
 		}
 	}

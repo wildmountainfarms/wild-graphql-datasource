@@ -32,9 +32,14 @@ const (
 )
 
 type LabelOption struct {
-	Name  string          `json:"name"`
-	Type  LabelOptionType `json:"type"`
-	Value string          `json:"value"`
+	Name        string                  `json:"name"`
+	Type        LabelOptionType         `json:"type"`
+	Value       string                  `json:"value"`
+	FieldConfig *LabelOptionFieldConfig `json:"fieldConfig"`
+}
+type LabelOptionFieldConfig struct {
+	Required     bool    `json:"required"`
+	DefaultValue *string `json:"defaultValue"`
 }
 
 func (parsingOption *ParsingOption) GetTimeField(key string) *TimeField {

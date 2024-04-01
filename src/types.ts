@@ -14,10 +14,19 @@ export interface LabelOption {
   /** When {@link type} is {@link LabelOptionType.CONSTANT}, this represents a text value that is constant.
    * When {@link type} is {@link LabelOptionType.FIELD}, this represents the path to a field relative to the data path */
   value: string;
+  /** May be defined when {@link type} is {@link LabelOptionType.Field}. */
+  fieldConfig?: LabelOptionFieldConfig;
 }
 export enum LabelOptionType {
   CONSTANT = "constant",
   FIELD = "field",
+}
+export interface LabelOptionFieldConfig {
+  required: boolean;
+  defaultValue?: string;
+}
+export const DEFAULT_LABEL_OPTION_FIELD_CONFIG: LabelOptionFieldConfig = { // omit is default
+  required: false
 }
 
 export interface ParsingOption {
