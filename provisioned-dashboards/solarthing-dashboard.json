@@ -1,3 +1,4 @@
+
 {
   "annotations": {
     "list": [
@@ -12,13 +13,83 @@
         "iconColor": "rgba(0, 211, 255, 1)",
         "name": "Annotations & Alerts",
         "type": "dashboard"
+      },
+      {
+        "datasource": {
+          "type": "retrodaredevil-wildgraphql-datasource",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "iconColor": "dark-orange",
+        "mappings": {
+          "text": {
+            "source": "field",
+            "value": "packet.acModeName"
+          },
+          "time": {
+            "source": "field",
+            "value": "dateMillis"
+          }
+        },
+        "name": "AC Mode Change Annotation",
+        "target": {
+          "parsingOptions": [
+            {
+              "dataPath": "queryEventIdentifier.fxACModeChange",
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  queryEventIdentifier(from:$from, to:$to, fragmentId: 1, identifier: \"OutbackIdentifier(address=1)\") {\n    fxACModeChange {\n      dateMillis\n      packet {\n        acModeName\n      }\n    }\n  }\n}\n",
+          "refId": "Anno"
+        }
+      },
+      {
+        "datasource": {
+          "type": "retrodaredevil-wildgraphql-datasource",
+          "uid": "${datasource}"
+        },
+        "enable": true,
+        "iconColor": "red",
+        "mappings": {
+          "text": {
+            "source": "field",
+            "value": "packet.commandName"
+          },
+          "time": {
+            "source": "field",
+            "value": "dateMillis"
+          },
+          "title": {
+            "source": "field",
+            "value": "fragmentDeviceInfo.deviceName"
+          }
+        },
+        "name": "Command Annotations",
+        "target": {
+          "parsingOptions": [
+            {
+              "dataPath": "queryEvent.mateCommand",
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  queryEvent(from:$from, to:$to) {\n    mateCommand {\n      dateMillis\n      fragmentDeviceInfo {\n        deviceName\n      }\n      packet {\n        commandName\n      }\n    }\n  }\n}\n",
+          "refId": "Anno"
+        }
       }
     ]
   },
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 9,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -229,12 +300,34 @@
           },
           "parsingOptions": [
             {
-              "dataPath": "data.roverStatus",
+              "dataPath": "data.temperature",
               "labelOptions": [
                 {
+                  "fieldConfig": {
+                    "defaultValue": "UNKNOWN",
+                    "required": false
+                  },
                   "name": "displayName",
-                  "type": "constant",
-                  "value": "Battery"
+                  "type": "field",
+                  "value": "meta.name"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifierRepresentation",
+                  "type": "field",
+                  "value": "packet.identifier.representation"
                 }
               ],
               "timeFields": [
@@ -244,12 +337,30 @@
               ]
             },
             {
-              "dataPath": "data.temperature",
+              "dataPath": "data.roverStatus",
               "labelOptions": [
                 {
                   "name": "displayName",
+                  "type": "constant",
+                  "value": "Battery"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
                   "type": "field",
-                  "value": "meta.name"
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifierRepresentation",
+                  "type": "field",
+                  "value": "packet.identifier.representation"
                 }
               ],
               "timeFields": [
@@ -259,48 +370,13 @@
               ]
             }
           ],
-          "queryText": "query ($sourceId: String!, $to: Long!) {\n  data:queryStatusLast(sourceId: $sourceId, to: $to) {\n    temperature {\n      dateMillis\n      fragmentIdString\n      packet {\n        temperatureFahrenheit\n        identifier {\n          representation\n        }\n      }\n      meta {\n        name\n      }\n    }\n    roverStatus {\n      dateMillis\n      packet {\n        batteryTemperatureFahrenheit\n        identifier {representation}\n      }\n    }\n  }\n}\n",
+          "queryText": "query ($sourceId: String!, $to: Long!) {\n  data: queryStatusLast(sourceId: $sourceId, to: $to) {\n    temperature {\n      dateMillis\n      fragmentIdString\n      packet {\n        temperatureFahrenheit\n        identifier {\n          representation\n        }\n      }\n      meta {\n        name\n      }\n    }\n    roverStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        batteryTemperatureFahrenheit\n        identifier {\n          representation\n        }\n      }\n    }\n  }\n}",
           "refId": "A",
           "variables": "{\n  \"sourceId\": \"default\"\n}"
         }
       ],
       "title": "Temperature Data",
-      "transformations": [
-        {
-          "id": "joinByField",
-          "options": {
-            "byField": "packet.identifier.representation",
-            "mode": "outer"
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {
-              "packet.temperatureFahrenheit {displayName=\"Battery Room\", name=\"response displayName=Battery Room\"}": false
-            },
-            "includeByName": {},
-            "indexByName": {
-              "dateMillis {displayName=\"Battery Room\", name=\"response displayName=Battery Room\"}": 5,
-              "dateMillis {displayName=\"Battery\", name=\"response displayName=Battery\"}": 14,
-              "dateMillis {displayName=\"Indoor\", name=\"response displayName=Indoor\"}": 8,
-              "dateMillis {displayName=\"Outdoor\", name=\"response displayName=Outdoor\"}": 12,
-              "fragmentIdString {displayName=\"Battery Room\", name=\"response displayName=Battery Room\"}": 6,
-              "fragmentIdString {displayName=\"Indoor\", name=\"response displayName=Indoor\"}": 9,
-              "fragmentIdString {displayName=\"Outdoor\", name=\"response displayName=Outdoor\"}": 10,
-              "meta.name {displayName=\"Battery Room\", name=\"response displayName=Battery Room\"}": 4,
-              "meta.name {displayName=\"Indoor\", name=\"response displayName=Indoor\"}": 7,
-              "meta.name {displayName=\"Outdoor\", name=\"response displayName=Outdoor\"}": 11,
-              "packet.batteryTemperatureFahrenheit {displayName=\"Battery\", name=\"response displayName=Battery\"}": 2,
-              "packet.identifier.representation {displayName=\"Battery\"}": 13,
-              "packet.temperatureFahrenheit {displayName=\"Battery Room\", name=\"response displayName=Battery Room\"}": 3,
-              "packet.temperatureFahrenheit {displayName=\"Indoor\", name=\"response displayName=Indoor\"}": 1,
-              "packet.temperatureFahrenheit {displayName=\"Outdoor\", name=\"response displayName=Outdoor\"}": 0
-            },
-            "renameByName": {}
-          }
-        }
-      ],
+      "transformations": [],
       "type": "stat"
     },
     {
@@ -747,16 +823,28 @@
               "dataPath": "queryStatus.batteryVoltage",
               "labelOptions": [
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "displayName",
                   "type": "field",
                   "value": "packet.identityInfo.displayName"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "fragmentId",
                   "type": "field",
                   "value": "fragmentIdString"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "identifier",
                   "type": "field",
                   "value": "packet.identifier.representation"
@@ -909,7 +997,32 @@
           "unit": "none",
           "unitScale": true
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Device"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 88
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mode"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 71
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
         "h": 8,
@@ -948,7 +1061,7 @@
               ]
             }
           ],
-          "queryText": "query ($sourceId: String!, $to: Long!) {\n  data:queryStatusLast(to:$to, sourceId:$sourceId) {\n    solarDevice {\n      packet {\n        identityInfo { displayName }\n        modeName: solarModeTypeDisplayName\n      }\n    }\n   }\n}",
+          "queryText": "query ($sourceId: String!, $to: Long!) {\n  data: queryStatusLast(to: $to, sourceId: $sourceId) {\n    solarDevice {\n      packet {\n        identityInfo {\n          displayName\n        }\n        modeName: solarModeTypeDisplayName\n      }\n    }\n  }\n}",
           "refId": "A",
           "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
         }
@@ -996,12 +1109,12 @@
                 "value": null
               },
               {
-                "color": "yellow",
-                "value": 100
+                "color": "#77a272",
+                "value": 0.5
               },
               {
-                "color": "semi-dark-orange",
-                "value": 800
+                "color": "green",
+                "value": 1.5
               }
             ]
           },
@@ -1361,16 +1474,28 @@
               "dataPath": "queryStatus.solar",
               "labelOptions": [
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "displayName",
                   "type": "field",
                   "value": "packet.identityInfo.displayName"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "fragmentId",
                   "type": "field",
                   "value": "fragmentIdString"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "identifier",
                   "type": "field",
                   "value": "packet.identifier.representation"
@@ -1389,6 +1514,340 @@
         }
       ],
       "title": "PV Wattage (TODO stack, forecast)",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.metaName} (${__field.labels.fragmentId}-${__field.labels.dataId})",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "fahrenheit",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.temperature",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "UNKNOWN",
+                    "required": false
+                  },
+                  "name": "metaName",
+                  "type": "field",
+                  "value": "meta.name"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "dataId",
+                  "type": "field",
+                  "value": "packet.dataIdString"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  queryStatus(from: $from, to: $to) {\n    temperature {\n      dateMillis\n      fragmentIdString\n      packet {\n        temperatureFahrenheit\n        dataIdString\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n      meta {\n        name\n      }\n    }\n  }\n}",
+          "refId": "A"
+        }
+      ],
+      "title": "Temperature Sensors",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 1500000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"displayName\"]}",
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "watt",
+          "unitScale": true
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rover 40A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tracer 20A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.fxStatus",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "displayName",
+                  "type": "field",
+                  "value": "packet.identityInfo.displayName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifier",
+                  "type": "field",
+                  "value": "packet.identifier.representation"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    fxStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        powerUsageWattage\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Power Usage (Stacked)",
       "transformations": [],
       "type": "timeseries"
     },
@@ -1524,7 +1983,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 22
       },
       "id": 14,
       "options": {
@@ -1551,16 +2010,28 @@
               "dataPath": "data.data",
               "labelOptions": [
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "displayName",
                   "type": "field",
                   "value": "identifiable.identityInfo.displayName"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "fragmentId",
                   "type": "field",
                   "value": "fragmentIdString"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "identifier",
                   "type": "field",
                   "value": "identifiable.identifier.representation"
@@ -1635,384 +2106,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "watt",
-          "unitScale": true
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "MX 3"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "MX 4"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "light-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Rover 40A"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Tracer 20A"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 22
-      },
-      "id": 12,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "retrodaredevil-wildgraphql-datasource",
-            "uid": "${datasource}"
-          },
-          "parsingOptions": [
-            {
-              "dataPath": "queryStatus.fxStatus",
-              "labelOptions": [
-                {
-                  "name": "displayName",
-                  "type": "field",
-                  "value": "packet.identityInfo.displayName"
-                },
-                {
-                  "name": "fragmentId",
-                  "type": "field",
-                  "value": "fragmentIdString"
-                },
-                {
-                  "name": "identifier",
-                  "type": "field",
-                  "value": "packet.identifier.representation"
-                }
-              ],
-              "timeFields": [
-                {
-                  "timePath": "dateMillis"
-                }
-              ]
-            }
-          ],
-          "queryText": "query ($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    fxStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        powerUsageWattage\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
-          "refId": "A",
-          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
-        }
-      ],
-      "title": "Power Usage (Stacked)",
-      "transformations": [],
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "retrodaredevil-wildgraphql-datasource",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": 1500000,
-            "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "${__field.labels[\"displayName\"]}",
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "watt",
-          "unitScale": true
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "MX 3"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "MX 4"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "light-green",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Rover 40A"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "dark-blue",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Tracer 20A"
-            },
-            "properties": [
-              {
-                "id": "color",
-                "value": {
-                  "fixedColor": "super-light-red",
-                  "mode": "fixed"
-                }
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 22
-      },
-      "id": 15,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "retrodaredevil-wildgraphql-datasource",
-            "uid": "${datasource}"
-          },
-          "operationName": "GeneratorChargingQuery",
-          "parsingOptions": [
-            {
-              "dataPath": "queryStatus.fxStatus",
-              "labelOptions": [
-                {
-                  "name": "displayName",
-                  "type": "field",
-                  "value": "packet.identityInfo.displayName"
-                },
-                {
-                  "name": "fragmentId",
-                  "type": "field",
-                  "value": "fragmentIdString"
-                },
-                {
-                  "name": "identifier",
-                  "type": "field",
-                  "value": "packet.identifier.representation"
-                }
-              ],
-              "timeFields": [
-                {
-                  "timePath": "dateMillis"
-                }
-              ]
-            }
-          ],
-          "queryText": "query GeneratorChargingQuery($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    fxStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        chargerWattage\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
-          "refId": "A",
-          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
-        }
-      ],
-      "title": "Generator Charging (Stacked)",
-      "transformations": [],
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "retrodaredevil-wildgraphql-datasource",
-        "uid": "${datasource}"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": 1500000,
-            "lineInterpolation": "smooth",
-            "lineStyle": {
-              "fill": "solid"
-            },
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "normal"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "displayName": "${__field.labels[\"displayName\"]}",
-          "mappings": [],
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
+                "color": "green",
+                "value": null
               },
               {
                 "color": "red",
@@ -2116,16 +2211,28 @@
               "dataPath": "queryStatus.fxStatus",
               "labelOptions": [
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "displayName",
                   "type": "field",
                   "value": "packet.identityInfo.displayName"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "fragmentId",
                   "type": "field",
                   "value": "fragmentIdString"
                 },
                 {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
                   "name": "identifier",
                   "type": "field",
                   "value": "packet.identifier.representation"
@@ -2143,8 +2250,1611 @@
           "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
         }
       ],
-      "title": "Load on Battery",
+      "title": "Load on Battery (Stacked)",
       "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 1500000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"displayName\"]}",
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "watt",
+          "unitScale": true
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rover 40A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tracer 20A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 30
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "operationName": "GeneratorChargingQuery",
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.fxStatus",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "displayName",
+                  "type": "field",
+                  "value": "packet.identityInfo.displayName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifier",
+                  "type": "field",
+                  "value": "packet.identifier.representation"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query GeneratorChargingQuery($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    fxStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        chargerWattage\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Generator Charging (Stacked)",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 1500000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"displayName\"]}",
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "kwatth",
+          "unitScale": true
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rover 40A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tracer 20A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 38
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.fxDaily",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "displayName",
+                  "type": "field",
+                  "value": "packet.identityInfo.displayName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifier",
+                  "type": "field",
+                  "value": "packet.identifier.representation"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(from: $from, to: $to, sourceId: $sourceId) {\n    fxDaily {\n      Time: dateMillis\n      fragmentIdString\n      packet {\n        inverterKWH\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Energy used over time (Stacked)",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 1500000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"displayName\"]}",
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "watt",
+          "unitScale": true
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rover 40A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tracer 20A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 38
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "operationName": "GeneratorBuyingQuery",
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.fxStatus",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "displayName",
+                  "type": "field",
+                  "value": "packet.identityInfo.displayName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifier",
+                  "type": "field",
+                  "value": "packet.identifier.representation"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query GeneratorBuyingQuery($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    fxStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        buyWattage\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Generator Buying (Stacked)",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels.deviceName} - ${__field.labels.suffix}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "fahrenheit",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 46
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.cpuTemperature",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "UNKNOWN",
+                    "required": false
+                  },
+                  "name": "deviceName",
+                  "type": "field",
+                  "value": "fragmentDeviceInfo.deviceName"
+                },
+                {
+                  "name": "suffix",
+                  "type": "constant",
+                  "value": "CPU"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            },
+            {
+              "dataPath": "queryStatus.roverBattery",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "deviceName",
+                  "type": "field",
+                  "value": "packet.identityInfo.name"
+                },
+                {
+                  "name": "suffix",
+                  "type": "constant",
+                  "value": "Battery"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            },
+            {
+              "dataPath": "queryStatus.roverController",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "deviceName",
+                  "type": "field",
+                  "value": "packet.identityInfo.name"
+                },
+                {
+                  "name": "suffix",
+                  "type": "constant",
+                  "value": "Internal"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            },
+            {
+              "dataPath": "queryStatus.tracerBattery",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "deviceName",
+                  "type": "field",
+                  "value": "packet.identityInfo.name"
+                },
+                {
+                  "name": "suffix",
+                  "type": "constant",
+                  "value": "Battery"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            },
+            {
+              "dataPath": "queryStatus.tracerController",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "deviceName",
+                  "type": "field",
+                  "value": "packet.identityInfo.name"
+                },
+                {
+                  "name": "suffix",
+                  "type": "constant",
+                  "value": "Internal"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  queryStatus(from: $from, to: $to) {\n    cpuTemperature {\n      dateMillis\n      fragmentIdString\n      packet {\n        cpuTemperatureFahrenheit\n      }\n      fragmentDeviceInfo {\n        deviceName\n      }\n    }\n    roverBattery: roverStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        batteryTemperatureFahrenheit\n        identifier {\n          representation\n        }\n        identityInfo {\n          name\n        }\n      }\n    }\n    roverController: roverStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        controllerTemperatureFahrenheit\n        identifier {\n          representation\n        }\n        identityInfo {\n          name\n        }\n      }\n    }\n    tracerBattery: tracerStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        batteryTemperatureFahrenheit\n        identifier {\n          representation\n        }\n        identityInfo {\n          name\n        }\n      }\n    }\n    tracerController: tracerStatus {\n      dateMillis\n      fragmentIdString\n      packet {\n        controllerTemperatureFahrenheit\n        identifier {\n          representation\n        }\n        identityInfo {\n          name\n        }\n      }\n    }\n  }\n}",
+          "refId": "A"
+        }
+      ],
+      "title": "Device Temperature",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 1500000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"displayName\"]}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "volt",
+          "unitScale": true
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FX 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FX 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rover 40A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tracer 20A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 46
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "operationName": "BatteryVoltage",
+          "parsingOptions": [
+            {
+              "dataPath": "queryBatteryRecord.averageBatteryVoltage",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "displayName",
+                  "type": "field",
+                  "value": "identifiable.identityInfo.displayName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifier",
+                  "type": "field",
+                  "value": "identifiable.identifier.representation"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query BatteryVoltage($sourceId: String!, $from: Long!, $to: Long!) {\n  queryBatteryRecord(from: $from, to: $to, sourceId: $sourceId) {\n    averageBatteryVoltage {\n      dateMillis\n      data\n      fragmentIdString\n      identifiable {\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Average Battery Voltage",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "noValue": "No scheduled commands",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 54
+      },
+      "id": 21,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryAlter.scheduledCommands",
+              "timeFields": [
+                {
+                  "timePath": "data.scheduledTimeMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($sourceId: String!) {\n  queryAlter(sourceId: $sourceId) {\n    scheduledCommands {\n      data {\n        scheduledTimeMillis\n        commandName\n      }\n    }\n  }\n}",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Scheduled Commands",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": 1500000,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"displayName\"]}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "volt",
+          "unitScale": true
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FX 1"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "FX 2"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 3"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "MX 4"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rover 40A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Tracer 20A"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "super-light-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 54
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "operationName": "BatteryVoltage",
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.batteryVoltageTemperatureCompensated",
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "displayName",
+                  "type": "field",
+                  "value": "identifiable.identityInfo.displayName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "fragmentId",
+                  "type": "field",
+                  "value": "fragmentIdString"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "identifier",
+                  "type": "field",
+                  "value": "identifiable.identifier.representation"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query BatteryVoltage($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    batteryVoltageTemperatureCompensated {\n      dateMillis\n      fragmentIdString\n      data\n      identifiable {\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Battery Voltage Temperature Compensated",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "noValue": "No active flags",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 62
+      },
+      "id": 22,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryAlter.activeFlags",
+              "timeFields": []
+            }
+          ],
+          "queryText": "query ($sourceId: String!, $to: Long!) {\n  queryAlter(sourceId: $sourceId) {\n    activeFlags(dateMillis: $to) {\n      flagData {\n        flagName\n      }\n    }\n  }\n}",
+          "refId": "A",
+          "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
+        }
+      ],
+      "title": "Active Flags",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "ms",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 62
+      },
+      "id": 24,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "${datasource}"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryFXCharging",
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  queryFXCharging(from: $from, to: $to, fragmentId: 1) {\n    dateMillis\n    data {\n      remainingAbsorbTimeMillis\n      remainingFloatTimeMillis\n      remainingEqualizeTimeMillis\n    }\n  }\n}",
+          "refId": "A"
+        }
+      ],
+      "title": "Panel Title",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "data.remainingAbsorbTimeMillis": "Absorb (Full Charge)",
+              "data.remainingEqualizeTimeMillis": "Equalize (Sometimes used)",
+              "data.remainingFloatTimeMillis": "Float (Ignore)"
+            }
+          }
+        }
+      ],
       "type": "timeseries"
     }
   ],
@@ -2212,6 +3922,6 @@
   "timezone": "browser",
   "title": "Wild Mountain Farms SolarThing",
   "uid": "d7152e74-753c-499b-b397-3b6fae1e6675",
-  "version": 1,
+  "version": 25,
   "weekStart": ""
 }

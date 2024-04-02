@@ -118,7 +118,6 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 			Status: backend.StatusBadRequest,
 		}, nil
 	}
-	//log.DefaultLogger.Info("Query text is: " + qm.QueryText)
 
 	// use later: pCtx.AppInstanceSettings.DecryptedSecureJSONData
 	variables, _ := queryvariables.ParseVariables(query, qm.Variables)

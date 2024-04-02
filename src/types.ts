@@ -1,8 +1,6 @@
 import { DataSourceJsonData } from '@grafana/data';
 import { DataQuery } from '@grafana/schema';
 
-type VariablesType = string | Record<string, any>;
-
 export interface TimeField {
   timePath: string;
   // TODO add a time format option here
@@ -30,7 +28,6 @@ export const DEFAULT_LABEL_OPTION_FIELD_CONFIG: LabelOptionFieldConfig = { // om
 }
 
 export interface ParsingOption {
-  // TODO make sure an empty string is valid in the backend like this says
   /** Required. The path to the array of data or object of data. Note: An empty string is valid -- it refers to the top-most data */
   dataPath: string;
   /**
@@ -48,7 +45,7 @@ interface WildGraphQLCommonQuery extends DataQuery {
   queryText: string;
   /** The operation name if explicitly set. Note that an empty string should be treated the same way as an undefined value, although storing an undefined value is preferred.*/
   operationName?: string;
-  variables?: VariablesType;
+  variables?: string | Record<string, any>;
 
   parsingOptions: ParsingOption[];
 }
@@ -112,9 +109,8 @@ export interface WildGraphQLSecureJsonData {
   // TODO We should support secret fields that can be passed to GraphQL queries as arguments
 }
 
-// TODO don't use Long here
 export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
-  queryText: `query ($from: Long!, $to: Long!) {
+  queryText: `query ($from: String!, $to: String!) {
   queryStatus(from: $from, to: $to) {
     batteryVoltage {
       dateMillis
@@ -134,7 +130,7 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
 };
 
 export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
-  queryText: `query ($from: Long!, $to: Long!) {
+  queryText: `query ($from: String!, $to: String!) {
   queryStatus(sourceId: "default", from: $from, to: $to) {
     batteryVoltage {
       dateMillis
@@ -154,7 +150,7 @@ export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
 };
 
 export const DEFAULT_ANNOTATION_QUERY: Partial<WildGraphQLAnnotationQuery> = {
-  queryText: `query ($from: Long!, $to: Long!) {
+  queryText: `query ($from: String!, $to: String!) {
   queryEvent(from:$from, to:$to) {
     mateCommand {
       dateMillis

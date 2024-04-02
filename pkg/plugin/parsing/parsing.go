@@ -22,29 +22,37 @@ const (
 	UNKNOWN_ERROR  ParseDataErrorType = 2
 )
 
-func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {
-	if len(parsingOption.DataPath) == 0 {
-		return nil, errors.New("data path cannot be empty"), FRIENDLY_ERROR
+func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) (jsonnode.Node, error) {
+	if len(dataPath) == 0 {
+		return graphQlResponseData, nil
 	}
-	split := strings.Split(parsingOption.DataPath, ".")
+	split := strings.Split(dataPath, ".")
 
 	var currentData *jsonnode.Object = graphQlResponseData
 	for _, part := range split[:len(split)-1] {
 		newData := currentData.Get(part)
 		if newData == nil {
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s does not exist! dataPath: %s", part, parsingOption.DataPath)), FRIENDLY_ERROR
+			return nil, errors.New(fmt.Sprintf("Part of data path: %s does not exist! dataPath: %s", part, dataPath))
 		}
 		switch value := newData.(type) {
 		case *jsonnode.Object:
 			currentData = value
 		default:
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! dataPath: %s", part, parsingOption.DataPath)), FRIENDLY_ERROR
+			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! dataPath: %s", part, dataPath))
 		}
 	}
-	// after this for loop, currentData should be an array if everything is going well
+	// after this for loop, currentData should be an array or an object if everything is going well
 	finalData := currentData.Get(split[len(split)-1])
 	if finalData == nil {
-		return nil, errors.New(fmt.Sprintf("Final part of data path: %s does not exist! dataPath: %s", split[len(split)-1], parsingOption.DataPath)), FRIENDLY_ERROR
+		return nil, errors.New(fmt.Sprintf("Final part of data path: %s does not exist! dataPath: %s", split[len(split)-1], dataPath))
+	}
+	return finalData, nil
+}
+
+func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {
+	finalData, err := getNodeFromDataPath(graphQlResponseData, parsingOption.DataPath)
+	if err != nil {
+		return nil, err, FRIENDLY_ERROR
 	}
 
 	var dataArray []*jsonnode.Object
@@ -66,7 +74,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			value,
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))), FRIENDLY_ERROR
+		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array or object! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))), FRIENDLY_ERROR
 	}
 
 	// We store a fieldMap inside of this frameMap.
@@ -75,8 +83,6 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 	//   Upon subsequent element insertion, if the type of the array does not match that elements type, an error is thrown.
 	//   This error is never expected to occur because a correct GraphQL response should never have a particular field be of different types
 	fm := framemap.New()
-
-	//labelsToFieldMapMap := map[Labels]map[string]interface{}{}
 
 	for _, dataElement := range dataArray {
 		flatData := jsonnode.NewObject()
