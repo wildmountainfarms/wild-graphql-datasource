@@ -1,6 +1,6 @@
 {
   "name": "wild-graphql-datasource",
-  "version": "0.0.6",
+  "version": "1.0.0",
   "description": "Grafana data source to interpret GraphQL query results as timeseries data",
   "scripts": {
     "build": "webpack -c ./.config/webpack/webpack.config.ts --env production",
@@ -62,7 +62,7 @@
     "@grafana/runtime": "10.4.1",
     "@grafana/schema": "10.4.1",
     "@grafana/ui": "10.4.1",
-    "graphiql": "^3.1.1",
+    "graphiql": "^3.1.2",
     "graphql": "^16.8.1",
     "graphql-ws": "^5.14.3",
     "react": "18.2.0",
