@@ -397,15 +397,25 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
                 <div></div>
               </InlineField>
               {parsingOptionIndex !== 0 &&
-                <IconButton name={"arrow-up"}
-                            onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex - 1)}/>
+                <IconButton
+                  name={"arrow-up"}
+                  aria-label="Move up"
+                  onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex - 1)}
+                />
               }
               {parsingOptionIndex < query.parsingOptions.length - 1 &&
-                <IconButton name={"arrow-down"}
-                            onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex + 1)}/>
+                <IconButton
+                  name={"arrow-down"}
+                  aria-label="Move down"
+                  onClick={() => swapParsingOption(parsingOptionIndex, parsingOptionIndex + 1)}
+                />
               }
               {query.parsingOptions.length !== 1 &&
-                <IconButton name={"trash-alt"} onClick={() => deleteParsingOption(parsingOptionIndex)}/>
+                <IconButton
+                  name={"trash-alt"}
+                  aria-label="Remove"
+                  onClick={() => deleteParsingOption(parsingOptionIndex)}
+                />
               }
             </div>
             <div className="gf-form-inline">
@@ -442,7 +452,11 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
                 </InlineField>
                 {/*TODO add time format option here*/}
                 {timeFieldIndex !== displayedTimeFields.length - 1 &&
-                  <IconButton name={"minus"} onClick={() => deleteTimeField(parsingOptionIndex, timeFieldIndex)}/>
+                  <IconButton
+                    name={"minus"}
+                    aria-label="Remove time path"
+                    onClick={() => deleteTimeField(parsingOptionIndex, timeFieldIndex)}
+                  />
                 }
               </div>
             </>)}
@@ -537,7 +551,11 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
                       />
                     </InlineField>
                   }
-                  <IconButton name={"minus"} onClick={() => deleteLabelOption(parsingOptionIndex, labelOptionIndex)}/>
+                  <IconButton
+                    name={"minus"}
+                    aria-label="Remove"
+                    onClick={() => deleteLabelOption(parsingOptionIndex, labelOptionIndex)}
+                  />
                 </div>
               </>;
             })}
@@ -562,7 +580,11 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
               defaultValue=''
               width={INPUT_WIDTH}/>
           </InlineField>
-          <IconButton name={"plus"} onClick={() => addNewLabel()}/>
+          <IconButton
+            name={"plus"}
+            aria-label="New label"
+            onClick={() => addNewLabel()}
+          />
         </div>
       </div>
     </>
