@@ -1,0 +1,80 @@
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: SolarThing Alerts
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: ea5bb5a0-55be-4f37-b9e0-4804b12d7a73
+        title: Low Battery Voltage
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: fa66cf68-c3d8-4490-a89d-0c3b6a87fff8
+            model:
+              datasource:
+                type: retrodaredevil-wildgraphql-datasource
+                uid: fa66cf68-c3d8-4490-a89d-0c3b6a87fff8
+              intervalMs: 1000
+              maxDataPoints: 43200
+              parsingOptions:
+                - dataPath: queryStatusLast.batteryVoltage
+                  labelOptions: []
+                  timeFields:
+                    - timePath: dateMillis
+              queryText: |
+                query ($to: Long!) {
+                  queryStatusLast(sourceId: "default", to: $to) {
+                    batteryVoltage {
+                      fragmentIdString
+                      packet {
+                        batteryVoltage
+                        identifier {
+                          representation
+                        }
+                      }
+                    }
+                  }
+                }
+              refId: A
+          - refId: C
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 22.4
+                    type: lt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+                  type: query
+              datasource:
+                type: __expr__
+                uid: __expr__
+              expression: A
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: C
+              type: threshold
+        noDataState: NoData
+        execErrState: Error
+        for: 5m
+        annotations:
+          description: Triggers when the battery is below 22.4
+          runbook_url: ""
+          summary: Low Battery
+        labels:
+          "": ""
+        isPaused: false

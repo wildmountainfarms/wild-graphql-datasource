@@ -5,7 +5,7 @@ type QueryModel struct {
 	QueryText string `json:"queryText"`
 	// The name of the operation, or a blank string to let the GraphQL server infer the operation name
 	OperationName string `json:"operationName"`
-	// The variables for the operation. May either be a string or a map[string]interface{}
+	// The variables for the operation. May either be a string or a map[string]interface{} or nil
 	Variables      interface{}     `json:"variables"`
 	ParsingOptions []ParsingOption `json:"parsingOptions"`
 }

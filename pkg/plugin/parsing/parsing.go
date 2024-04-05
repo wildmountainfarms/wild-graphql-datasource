@@ -134,7 +134,15 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					row.FieldMap[key] = typedValue.String()
 				case jsonnode.Boolean:
 					row.FieldMap[key] = typedValue.Bool()
-				case jsonnode.Null, jsonnode.Number:
+				case jsonnode.Number:
+					parsedValue, err := typedValue.Float64()
+					if err != nil {
+						return nil, errors.New(fmt.Sprintf("Could not parse number: %s", typedValue.String())), UNKNOWN_ERROR
+					}
+					row.FieldMap[key] = parsedValue
+					// NOTE: We are allowed to store a jsonnode.Number type directly into the FieldMap (it's part of the contract to support that),
+					//   but we decide not to because alerting queries require float64s to be used
+				case jsonnode.Null:
 					row.FieldMap[key] = typedValue
 				default:
 					return nil, errors.New(fmt.Sprintf("Unsupported type! type: %v", reflect.TypeOf(typedValue))), UNKNOWN_ERROR

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"reflect"
 )
 
 func AutoPopulateVariables(query backend.DataQuery, variables map[string]interface{}) {
@@ -59,9 +60,11 @@ func ParseVariables(query backend.DataQuery, rawVariables interface{}) (map[stri
 		for key, value := range typedRawVariables {
 			variables[key] = value
 		}
+	case nil:
+		// do nothing
 	default:
 		noErrors = false
-		log.DefaultLogger.Error("Unable to parse variables for ref ID:" + query.RefID)
+		log.DefaultLogger.Error(fmt.Sprintf("Unable to parse variables for ref ID: %s. Type is %v", query.RefID, reflect.TypeOf(rawVariables)))
 	}
 
 	return variables, noErrors

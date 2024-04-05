@@ -80,8 +80,14 @@ The value is provided by the provided variables as seen in the above table.
 Notice that while `interval_ms` is provided, we do not use it or define it anywhere in our query.
 One thing to keep in mind for your own queries is the type accepted by the GraphQL server for a given variable.
 In the case of that specific schema, the type of a `Long` is allowed to be a number or a string.
-If your specific schema explicitly asks for a `String`, these variables may not work.
-Please [raise and issue](https://github.com/wildmountainfarms/wild-graphql-datasource/issues) if this limitation becomes a roadblock.
+If your schema does not have a `Long` type, you may consider changing the declaration of the query to use `Float` or `String`,
+which are both types built into GraphQL.
+
+If you run into any issues using the `from` and `to` variables for your specific schema, 
+please [raise and issue](https://github.com/wildmountainfarms/wild-graphql-datasource/issues).
+Alternatively, if you are making a query on the frontend (any query besides alerting queries),
+you may consider reading the next section to define your own from and to variables and assigning their values to
+[a global variable](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to).
 
 
 #### Grafana variable interpolation
@@ -263,11 +269,13 @@ This section documents errors that may be common
 * `Failed to evaluate queries and expressions: input data must be a wide series but got type long (input refid)`
   * This error indicates that the query returns more fields than just the time and the datapoint.
   * For alerts, the response from the GraphQL query cannot contain more than the time and datapoint. At this time, you cannot use other attributes from the result to filter the data.
+* `Failed to evaluate queries and expressions: failed to execute conditions: input data must be a wide series but got type not (input refid)`
+  * This may occur if you don't have any numeric data in your response (https://github.com/grafana/grafana/issues/46429)
+  * This error also occurs when you include labels and your response includes multiple data frames.
+    * To fix this, don't use labels in alerting queries. Alerting queries support the long data frame format, so it will automatically assume non-numeric fields are labels.
+    * This has the drawback that if your query returns data across a period of time, you cannot easily partition data by fields AND choose to only use the most recent data.
 
 ## Known Issues
 
-* Alerting queries can only use fields provided in the response data.
+* Alerting queries and annotation queries can only use fields provided in the response data.
   * We plan to mitigate this in the future by allowing custom fields to be added to the response
-* When hovering your mouse over a field in the query inside the GraphiQL editor, clicking either the field name or its type will navigate you away from the page, rather than jumping to the reference in the documentation explorer.
-  * Beware of this issue. If you accidentally let this bug navigate you away from the page, your work will be lost since your last dashboard save.
-  * Track this issue here: [grafana #85044](https://github.com/grafana/grafana/issues/85044)
