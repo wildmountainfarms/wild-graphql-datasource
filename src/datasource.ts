@@ -1,12 +1,5 @@
-import {
-  AnnotationSupport,
-  CoreApp,
-  DataQueryRequest,
-  DataQueryResponse,
-  DataSourceInstanceSettings,
-} from '@grafana/data';
+import {AdHocVariableFilter, AnnotationSupport, CoreApp, DataSourceInstanceSettings, ScopedVars,} from '@grafana/data';
 import {DataSourceWithBackend, getTemplateSrv} from '@grafana/runtime';
-import {Observable} from 'rxjs';
 
 import {
   DEFAULT_ALERTING_QUERY,
@@ -16,7 +9,6 @@ import {
   WildGraphQLAnnotationQuery,
   WildGraphQLAnyQuery,
   WildGraphQLDataSourceOptions,
-  WildGraphQLMainQuery
 } from './types';
 import {interpolateVariables} from "./variables";
 
@@ -37,7 +29,7 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildG
     };
   }
 
-  getDefaultQuery(app: CoreApp): Partial<WildGraphQLMainQuery> {
+  getDefaultQuery(app: CoreApp): Partial<WildGraphQLAnyQuery> {
     if (app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting) {
       // we have a different default query for alerts because alerts only support returning time and value columns.
       //   Additional columns in the data frame will return in an "input data must be a wide series" error.
@@ -45,25 +37,37 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildG
     }
     return DEFAULT_QUERY;
   }
-  query(request: DataQueryRequest<WildGraphQLAnyQuery>): Observable<DataQueryResponse> {
-
-    // Everything you see going on here is to do variable substitution for the values of the provided variables.
+  applyTemplateVariables(query: WildGraphQLAnyQuery, scopedVars: ScopedVars, filters?: AdHocVariableFilter[]): WildGraphQLAnyQuery {
     const templateSrv = getTemplateSrv();
-    const newTargets: WildGraphQLAnyQuery[] = request.targets.map((target) => {
-      const variables = getQueryVariablesAsJson(target);
-      const newVariables = interpolateVariables(variables, templateSrv, request.scopedVars);
-      return {
-        ...target,
-        variables: newVariables,
+    const variables = getQueryVariablesAsJson(query);
+    const interpolatedVariables = interpolateVariables(variables, templateSrv, scopedVars);
+    let interpolatedVariablesWithFullInterpolation: Record<string, any> = {};
+    if (query.variablesWithFullInterpolation !== undefined) {
+      // variablesWithFullInterpolation are inherently unsafe and should only be used when necessary.
+      //   We have to check to make sure parsing it does not result in an error.
+      //   We can only parse it after calling templateSrv.replace()
+      const interpolatedString = templateSrv.replace(query.variablesWithFullInterpolation, scopedVars);
+      try {
+        interpolatedVariablesWithFullInterpolation = JSON.parse(interpolatedString);
+      } catch (e) {
+        if (e instanceof SyntaxError) {
+          console.error("Error parsing variablesWithFullInterpolation for refId: " + query.refId + ". argument to JSON.parse(), error:", interpolatedString, e);
+          // We don't have a good way of indicating to the caller than an error has occurred,
+          //   so we instead continue without merging the variablesWithFullInterpolation
+        } else {
+          throw e;
+        }
       }
-    })
-    const newRequest = {
-      ...request,
-      targets: newTargets
+    }
+    const newVariables = {
+      ...interpolatedVariables,
+      ...interpolatedVariablesWithFullInterpolation
     };
-
-    // we aren't really supposed to change this method, but we do it anyway :)
-    return super.query(newRequest);
+    return {
+      ...query,
+      variablesWithFullInterpolation: undefined, // the backend does not care about this value, so don't pass it
+      variables: newVariables,
+    };
   }
   // metricFindQuery(query: any, options?: any): Promise<MetricFindValue[]> {
   //   // https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-support-for-variables
