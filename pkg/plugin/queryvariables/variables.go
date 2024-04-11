@@ -46,7 +46,7 @@ func ParseVariables(query backend.DataQuery, rawVariables interface{}) (map[stri
 		err := json.Unmarshal([]byte(typedRawVariables), &variables)
 		if err != nil {
 			noErrors = false
-			log.DefaultLogger.Error(fmt.Sprintf("Got error while parsing these variables: %s! Error:", typedRawVariables), err)
+			log.DefaultLogger.Error("Got error while parsing variables!", "typedRawVariables", typedRawVariables, "err", err)
 
 			// continue executing query without interpolated variables
 			// TODO consider if we want a flag in the options to prevent the query from continuing further in the case of an error
