@@ -142,6 +142,7 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 			Status: backend.StatusBadRequest,
 		}, nil
 	}
+	defer resp.Body.Close()
 	status := statusFromResponse(*resp)
 
 	graphQLResponse, responseParseError := graphql.ParseGraphQLResponse(resp.Body)
@@ -218,6 +219,7 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 	if err != nil {
 		return nil, err
 	}
+	defer resp.Body.Close()
 
 	graphQLResponse, responseParseError := graphql.ParseGraphQLResponse(resp.Body)
 	if responseParseError != nil {
