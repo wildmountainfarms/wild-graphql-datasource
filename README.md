@@ -57,13 +57,13 @@ This section is optional, but if you wish to provide constant variables for your
 
 Certain variables are provided to every query. These include:
 
-| Variable        | Type   | Description                                                                    | Grafana counterpart                                                                                               |
-|-----------------|--------|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `from`          | Number | Epoch milliseconds of the "from" time                                          | [$__from](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)   |
-| `to`            | Number | Epoch milliseconds of the "to" time                                            | [$__to](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)     |
-| `interval_ms`   | Number | The suggested duration between time points in a time series query              | [$__interval_ms](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__interval) |
-| `maxDataPoints` | Number | Maximum number of data points that should be returned from a time series query | N/A                                                                                                               |
-| `refId`         | String | Unique identifier of the query, set by the frontend call                       | N/A                                                                                                               |
+| Variable        | Type   | Description                                                                    | Grafana counterpart                                                                                               | Execute Button Support |
+|-----------------|--------|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|------------------------|
+| `from`          | Number | Epoch milliseconds of the "from" time                                          | [$__from](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)   | Yes                    |
+| `to`            | Number | Epoch milliseconds of the "to" time                                            | [$__to](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)     | Yes                    |
+| `interval_ms`   | Number | The suggested duration between time points in a time series query              | [$__interval_ms](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__interval) | No                     |
+| `maxDataPoints` | Number | Maximum number of data points that should be returned from a time series query | N/A                                                                                                               | No                     |
+| `refId`         | String | Unique identifier of the query, set by the frontend call                       | N/A                                                                                                               | No                     |
 
 An example usage is shown in the most basic query:
 

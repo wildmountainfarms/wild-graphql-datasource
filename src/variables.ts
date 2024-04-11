@@ -17,7 +17,7 @@ import {ScopedVars} from "@grafana/data";
 const AUTO_POPULATED_VARIABLES: Record<string, (templateSrv: TemplateSrv) => any> = {
   "from": templateSrv => Number(templateSrv.replace("$__from")),
   "to": templateSrv => Number(templateSrv.replace("$__to")),
-  "interval_ms": templateSrv => Number(templateSrv.replace("$__interval_ms")),
+  // While interval_ms can be obtained via $__interval_ms, but only as a ScopedVar, which we don't have easy access to inside a fetcher
 };
 
 /**
