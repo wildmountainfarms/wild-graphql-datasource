@@ -16,7 +16,6 @@ import {
   WildGraphQLAnnotationQuery,
   WildGraphQLAnyQuery,
   WildGraphQLDataSourceOptions,
-  WildGraphQLMainQuery
 } from './types';
 import {interpolateVariables} from "./variables";
 
@@ -37,7 +36,7 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildG
     };
   }
 
-  getDefaultQuery(app: CoreApp): Partial<WildGraphQLMainQuery> {
+  getDefaultQuery(app: CoreApp): Partial<WildGraphQLAnyQuery> {
     if (app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting) {
       // we have a different default query for alerts because alerts only support returning time and value columns.
       //   Additional columns in the data frame will return in an "input data must be a wide series" error.
@@ -51,9 +50,19 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildG
     const templateSrv = getTemplateSrv();
     const newTargets: WildGraphQLAnyQuery[] = request.targets.map((target) => {
       const variables = getQueryVariablesAsJson(target);
-      const newVariables = interpolateVariables(variables, templateSrv, request.scopedVars);
+      const interpolatedVariables = interpolateVariables(variables, templateSrv, request.scopedVars);
+      const interpolatedVariablesWithFullInterpolationObject = target.variablesWithFullInterpolation === undefined
+        ? {}
+        : JSON.parse( // TODO JSON.parse may throw a SyntaxError. For now, we're OK with that, but we may consider how to make this so it doesn't prevent ALL queries from being executed
+          templateSrv.replace(target.variablesWithFullInterpolation, request.scopedVars)
+        );
+      const newVariables = {
+        ...interpolatedVariables,
+        ...interpolatedVariablesWithFullInterpolationObject
+      }
       return {
         ...target,
+        variablesWithFullInterpolation: undefined, // the backend does not care about this value, so don't pass it
         variables: newVariables,
       }
     })

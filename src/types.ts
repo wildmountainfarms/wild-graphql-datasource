@@ -81,19 +81,26 @@ export function getQueryVariablesAsJson(query: WildGraphQLCommonQuery): Record<s
   return variables;
 }
 
+export interface WildGraphQLFrontendQuery extends WildGraphQLCommonQuery {
+  variablesWithFullInterpolation?: string;
+}
+
 /**
  * This interface represents the main type of query, which is used for most queries in Grafana
  */
-export interface WildGraphQLMainQuery extends WildGraphQLCommonQuery {
+export interface WildGraphQLMainQuery extends WildGraphQLFrontendQuery {
 }
 
-export interface WildGraphQLAnnotationQuery extends WildGraphQLCommonQuery {
+export interface WildGraphQLAnnotationQuery extends WildGraphQLFrontendQuery {
+}
+export interface WildGraphQLAlertingQuery extends WildGraphQLCommonQuery {
 }
 
 /** This type represents the possible options that can be stored in the datasource JSON for queries */
-export type WildGraphQLAnyQuery = (WildGraphQLMainQuery | WildGraphQLAnnotationQuery) &
+export type WildGraphQLAnyQuery = (WildGraphQLMainQuery | WildGraphQLAnnotationQuery | WildGraphQLAlertingQuery) &
   Partial<WildGraphQLMainQuery> &
-  Partial<WildGraphQLAnnotationQuery>;
+  Partial<WildGraphQLAnnotationQuery> &
+  Partial<WildGraphQLAlertingQuery>;
 
 
 /**
@@ -129,7 +136,7 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   ]
 };
 
-export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLMainQuery> = {
+export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLAlertingQuery> = {
   queryText: `query ($from: String!, $to: String!) {
   queryStatus(sourceId: "default", from: $from, to: $to) {
     batteryVoltage {

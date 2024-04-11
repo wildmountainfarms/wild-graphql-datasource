@@ -1,5 +1,5 @@
 import React, {ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef} from 'react';
-import {Button, IconButton, InlineField, Input, Select} from '@grafana/ui';
+import {Button, Checkbox, IconButton, InlineField, Input, Select, TextArea} from '@grafana/ui';
 import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
 import {
@@ -136,7 +136,8 @@ export function QueryEditor(props: Props) {
   );
 }
 
-function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
+function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Props) {
+  const isBackendOnlyQuery = app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting;
   const editorContext = useEditorContext();
   const labelToAddRef = useRef<HTMLInputElement>(null);
 
@@ -381,6 +382,32 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource }: Props) {
             />
           </InlineField>
         </div>
+        {!isBackendOnlyQuery && <>
+          <Checkbox
+            label="Define Advanced Variables JSON"
+            value={query.variablesWithFullInterpolation !== undefined}
+            onChange={(event) => {
+              onChange({
+                ...query,
+                variablesWithFullInterpolation: event.currentTarget.checked ? "{\n  \n}" : undefined
+              })
+            }}
+          />
+          {query.variablesWithFullInterpolation !== undefined &&
+            <TextArea
+              style={{
+                minHeight:"10em"
+              }}
+              value={query.variablesWithFullInterpolation}
+              onChange={(event) => {
+                onChange({
+                  ...query,
+                  variablesWithFullInterpolation: event.currentTarget.value
+                })
+              }}
+            />
+          }
+        </>}
       </div>
       <h3 className="page-heading">Parsing Options</h3>
       <div className="gf-form-group">
