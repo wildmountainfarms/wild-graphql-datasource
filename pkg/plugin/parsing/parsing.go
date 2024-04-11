@@ -151,7 +151,11 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 		}
 	}
 
-	return fm.ToFrames(), nil, NO_ERROR
+	frames, err := fm.ToFrames()
+	if err != nil {
+		return nil, err, UNKNOWN_ERROR
+	}
+	return frames, nil, NO_ERROR
 }
 
 // Given flatData and label options, computes the labels or returns a friendly error

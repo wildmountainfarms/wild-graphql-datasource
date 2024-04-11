@@ -2,9 +2,7 @@ package framemap
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/fieldsort"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
@@ -62,7 +60,10 @@ func createFieldForJsonNode(node *frameNode, field string) *data.Field {
 	return data.NewField(field, node.labels, values)
 }
 
-func (f *FrameMap) createField(targetNode *frameNode, field string) *data.Field {
+// Creates a field given a frameNode and a field key
+// If an error is returned, it is unexpected and is the result of an error within the plugin itself.
+// No possible configuration done by the user should cause this to return an error
+func (f *FrameMap) createField(targetNode *frameNode, fieldKey string) (*data.Field, error) {
 	var foundNull = false
 
 	// Although we don't have to iterate over all the nodes within a FrameMap,
@@ -70,38 +71,37 @@ func (f *FrameMap) createField(targetNode *frameNode, field string) *data.Field 
 	frameMapIterator := f.data.Iterator()
 	for frameMapIterator.Next() {
 		n := frameMapIterator.Value()
-		for _, row := range n.rows {
-			if value, exists := row.FieldMap[field]; exists {
+		for rowIndex, row := range n.rows {
+			if value, exists := row.FieldMap[fieldKey]; exists {
 				switch value.(type) {
 				case jsonnode.Null:
 					foundNull = true
 				case jsonnode.Number:
-					return createFieldForJsonNode(targetNode, field)
+					return createFieldForJsonNode(targetNode, fieldKey), nil
 				case time.Time:
-					return createFieldForNativeType[time.Time](targetNode, field)
+					return createFieldForNativeType[time.Time](targetNode, fieldKey), nil
 				case string:
-					return createFieldForNativeType[string](targetNode, field)
+					return createFieldForNativeType[string](targetNode, fieldKey), nil
 				case bool:
-					return createFieldForNativeType[bool](targetNode, field)
+					return createFieldForNativeType[bool](targetNode, fieldKey), nil
 				case float64:
-					return createFieldForNativeType[float64](targetNode, field)
+					return createFieldForNativeType[float64](targetNode, fieldKey), nil
 				default:
-					message := fmt.Sprintf("unknown type: %v", reflect.TypeOf(value))
-					log.DefaultLogger.Error(message)
-					panic(errors.New(message))
+					return nil, fmt.Errorf("field %s of row %d has unknown type: %v", fieldKey, rowIndex, reflect.TypeOf(value))
 				}
 			}
 		}
 	}
 
 	if foundNull {
-		return createFieldForJsonNode(targetNode, field)
+		return createFieldForJsonNode(targetNode, fieldKey), nil
 	}
-	log.DefaultLogger.Error("Could not find field")
-	panic(fmt.Errorf("could not find field: %s", field))
+	return nil, fmt.Errorf("could not find field: %s", fieldKey)
 }
 
-func (f *FrameMap) ToFrames() []*data.Frame {
+// ToFrames transforms the FrameMap to an array of frames
+// Any error that is returned is not caused by the user, and is an unexpected error.
+func (f *FrameMap) ToFrames() ([]*data.Frame, error) {
 	// create data frame response.
 	// For an overview on data frames and how grafana handles them:
 	//   https://grafana.com/developers/plugin-tools/introduction/data-frames
@@ -119,10 +119,14 @@ func (f *FrameMap) ToFrames() []*data.Frame {
 		frameName := fmt.Sprintf("response %v", node.labels)
 		frame := data.NewFrame(frameName)
 
-		for _, field := range fields {
-			frame.Fields = append(frame.Fields, f.createField(node, field))
+		for _, fieldKey := range fields {
+			field, err := f.createField(node, fieldKey)
+			if err != nil {
+				return nil, err
+			}
+			frame.Fields = append(frame.Fields, field)
 		}
 		r = append(r, frame)
 	}
-	return r
+	return r, nil
 }
