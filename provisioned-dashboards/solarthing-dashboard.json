@@ -3854,9 +3854,9 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "Wild Mountain Farms SolarThing",
-          "value": "9b2fe259-3112-4fb0-8d88-0788c6d6b5b4"
+          "selected": true,
+          "text": "SolarThing GraphQL",
+          "value": "fa66cf68-c3d8-4490-a89d-0c3b6a87fff8"
         },
         "hide": 0,
         "includeAll": false,
