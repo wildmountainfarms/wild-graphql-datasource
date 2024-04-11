@@ -121,6 +121,22 @@ One of the pros of this is simplicity, with the advantage of not having to worry
 
 REMEMBER: Variable interpolation does not work for alerting queries, or any query that is executed without the frontend component.
 
+#### Advanced Variable Interpolation
+
+If you need to incorporate numeric variables in the variables passed to your query, you cannot use the default variables editor, you must instead use Advanced Variables JSON.
+Click the checkbox to define it. Once you do, you can write JSON that is not valid until AFTER it is interpolated. For instance:
+
+```json
+{
+  "age": $age
+}
+```
+
+The above example is valid assuming that `$age` evaluates to a number that causes the resulting JSON to be valid.
+You can use both advanced variables JSON and the regular variables as described above. Just realize that advanced variables JSON will take precedence for any variables defined twice.
+
+WARNING: Only use advanced variables JSON if it is required to. If any part of the resulting JSON is invalid, no part of the advanced variable interpolation will be passed to the query.
+
 ### Documentation Explorer
 
 [GraphiQL](https://github.com/graphql/graphiql) provides a documentation explorer and can be opened on the left side of the GraphiQL editor
