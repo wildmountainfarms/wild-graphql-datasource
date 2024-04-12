@@ -46,6 +46,7 @@ func ParseVariables(query backend.DataQuery, rawVariables interface{}) (map[stri
 		err := json.Unmarshal([]byte(typedRawVariables), &variables)
 		if err != nil {
 			noErrors = false
+			// https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins
 			log.DefaultLogger.Error("Got error while parsing variables!", "typedRawVariables", typedRawVariables, "err", err)
 
 			// continue executing query without interpolated variables

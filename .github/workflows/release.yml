@@ -8,6 +8,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    # https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment#using-an-environment
+    environment: signing
     steps:
       - uses: actions/checkout@v3
       # https://github.com/grafana/plugin-actions/blob/main/build-plugin/README.md
