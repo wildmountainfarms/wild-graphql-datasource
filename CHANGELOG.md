@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.1
+
+No new features or fixes.
+
+Stability
+* First release that is officially signed
+
 ## 1.1.0
 
 New Features
