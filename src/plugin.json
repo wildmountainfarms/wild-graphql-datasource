@@ -22,7 +22,10 @@
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
-    "links": [],
+    "links": [
+      { "name": "Source Code", "url": "https://github.com/wildmountainfarms/wild-graphql-datasource" },
+      { "name": "License", "url": "https://github.com/wildmountainfarms/wild-graphql-datasource/-/main/LICENSE" }
+    ],
     "screenshots": [
       {
         "name": "Query Editor",

@@ -115,9 +115,7 @@ query ($sourceId: String!, $from: Long!, $to: Long!) {
 Here, `$sourceId` inside of the variables section will be interpolated with a value defined in your Grafana dashboard.
 `$sourceId` inside of the GraphQL query pane is a regular [variable](https://graphql.org/learn/queries/#variables) that is passed to the query.
 
-NOTE: Interpolating the entirety of the JSON text is not supported at this time.
-This means that interpolated variables cannot be passed as numbers and interpolated variables cannot define complex JSON objects.
-One of the pros of this is simplicity, with the advantage of not having to worry about escaping your strings.
+NOTE: If you need to pass a variable as a number you must use "Advanced Variable Interpolation", shown in the next section.
 
 REMEMBER: Variable interpolation does not work for alerting queries, or any query that is executed without the frontend component.
 
