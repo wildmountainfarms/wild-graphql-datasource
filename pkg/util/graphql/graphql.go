@@ -31,6 +31,7 @@ func (request *Request) ToRequest(ctx context.Context, url string) (*http.Reques
 	}
 	// if we don't add this header, we get an error of "Must provide query string"
 	httpReq.Header.Add("Content-Type", "application/json")
+	httpReq.Header.Add("Accept", "application/json")
 
 	return httpReq, nil
 }
