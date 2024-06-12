@@ -10,9 +10,12 @@ services:
         grafana_image: ${GRAFANA_IMAGE:-grafana-oss}
         # https://grafana.com/docs/grafana/latest/whatsnew/
         grafana_version: ${GRAFANA_VERSION:-10.3.3}
+        development: "true"
     ports:
       - 3000:3000/tcp
+      - 2345:2345/tcp
     volumes:
       - ./dist:/var/lib/grafana/plugins/retrodaredevil-wildgraphql-datasource
       - ./provisioning:/etc/grafana/provisioning
       - ./provisioned-dashboards:/provisioned-dashboards
+      - .:/root/retrodaredevil-wildgraphql-datasource
