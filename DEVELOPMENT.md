@@ -134,7 +134,6 @@ This section contains notes about dependencies.
 * Make annotation queries more intuitive
 * Add support for secure variable data defined in the data source configuration
   * The variables defined here cannot be overridden for any request - this is for security
-  * Also add support for secure HTTP headers
   
 Lower priority To-Dos
 
