@@ -9,21 +9,6 @@ Requests are made in the backend allowing support for alerting.
 
 Please report issues on our issues page: [wild-graphql-datasource/issues](https://github.com/wildmountainfarms/wild-graphql-datasource/issues)
 
-Contents
-
-* [Features](#features)
-* [Query Editor](#query-editor)
-  * [Query](#query)
-  * [Variables](#variables)
-* [Parsing Options](#parsing-options)
-  * [Data path and time path](#data-path-and-time-path)
-  * [Labels](#labels)
-  * [The use of multiple parsing options](#the-use-of-multiple-parsing-options)
-* [FAQ](#faq)
-* [Common Errors](#common-errors)
-* [Known Issues](#known-issues)
-
-
 ## Features
 
 * Complex GraphQL responses can be turned into timeseries data, or a simple table
@@ -32,7 +17,7 @@ Contents
   * Prettify the query with the click of a button
 * `from` and `to` variables are given to the query via [native GraphQL variables](https://graphql.org/learn/queries/#variables)
 * Variables section of the query editor supports interpolation of string values using [Grafana variables](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/). (\*not supported in alerting or other backend-only queries)
-* Multiple parsing options are supported allowing for a single GraphQL query to return many different data point with different formats.
+* Multiple parsing options are supported allowing for a single GraphQL query to return many different data points with different formats.
   * Each parsing option has its own labels, which can be populated by a field in the response. These labels are used to group the response into different data frames.
   * Labels can be used to change the display name by using `${__field.labels["displayName"]}` under Standard options > Display name.
 * This is a backend plugin, so alerting is supported
@@ -274,9 +259,6 @@ Remember that Grafana transformations are not the preferred way of doing this, a
 * Is this a drop-in replacement for [fifemon-graphql-datasource](https://grafana.com/grafana/plugins/fifemon-graphql-datasource/)?
   * No, but both data sources have similar goals and can be ported between with little effort.
 
-## Common errors
-
-This section documents errors that may be common
 
 ### Alerting Specific Errors
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+Merged [#5](https://github.com/wildmountainfarms/wild-graphql-datasource/pull/5)
+which updates the internal libraries for better HTTP header support that can be configured within the data source itself.
+Additionally, all GraphQL requests will include a `Accept: application/json` header in every request.
+This additional header matches [the GraphQL over HTTP spec](https://graphql.github.io/graphql-over-http/draft/#sec-Accept) for better compatibility with GraphQL servers.
+
 ## 1.1.1
 
 No new features or fixes.
