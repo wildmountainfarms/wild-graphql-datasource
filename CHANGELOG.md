@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1
+
+Updated LICENSE link in README.
+
 ## 1.2.0
 
 Merged [#5](https://github.com/wildmountainfarms/wild-graphql-datasource/pull/5)

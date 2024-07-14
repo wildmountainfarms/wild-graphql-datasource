@@ -24,7 +24,7 @@
     },
     "links": [
       { "name": "Source Code", "url": "https://github.com/wildmountainfarms/wild-graphql-datasource" },
-      { "name": "License", "url": "https://github.com/wildmountainfarms/wild-graphql-datasource/-/main/LICENSE" }
+      { "name": "License", "url": "https://github.com/wildmountainfarms/wild-graphql-datasource/blob/-/LICENSE" }
     ],
     "screenshots": [
       {
