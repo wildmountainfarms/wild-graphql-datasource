@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
@@ -12,7 +14,6 @@ import (
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/queryvariables"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/graphql"
-	"net/http"
 )
 
 // Make sure Datasource implements required interfaces. This is important to do
@@ -73,7 +74,7 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	//   but attempting to do that is out of scope for us right now, especially with how complicated a GraphQL query can be.
 
 	for _, q := range req.Queries {
-		res, err := d.query(ctx, req.PluginContext, q)
+		res, err := d.query(ctx, req, q)
 		if err != nil {
 			// If an error is returned from the query, we assume that it is not a recoverable error.
 			//   We can consider changing this in the future
@@ -100,7 +101,7 @@ func statusFromResponse(response http.Response) backend.Status {
 // In most error scenarios, the error should be nested within the DataResponse.
 // In some cases that are never expected to happen, error is returned and the DataResponse is nil.
 // In these cases, you can assume that something is seriously wrong, as we didn't intend to recover from that specific situation.
-func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, query backend.DataQuery) (*backend.DataResponse, error) {
+func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, query backend.DataQuery) (*backend.DataResponse, error) {
 
 	//log.DefaultLogger.Info(fmt.Sprintf("JSON is: %s", query.JSON))
 
@@ -133,6 +134,9 @@ func (d *Datasource) query(ctx context.Context, pCtx backend.PluginContext, quer
 		return nil, err
 	}
 
+	for key, value := range req.Headers {
+		request.Header.Set(key, value)
+	}
 	resp, err := d.httpClient.Do(request)
 	if err != nil {
 		// http.Client.Do returns an error when there's a network connectivity problem or something weird going on,
@@ -215,6 +219,9 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return nil, err
 	}
 
+	for key, value := range req.Headers {
+		request.Header.Set(key, value)
+	}
 	resp, err := d.httpClient.Do(request)
 	if err != nil {
 		return nil, err
