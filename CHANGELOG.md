@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.3.0
+
+Merged [#8](https://github.com/wildmountainfarms/wild-graphql-datasource/pull/8)
+which passes a request's HTTP headers to the GraphQL server.
+This change should respect the checkboxes under the "Auth" section of the data source's configuration
+so that OAuth and cookie headers are only sent if you toggle their setting.
+
+Additionally, these headers are now always passed to the GraphQL server for most queries:
+
+* `X-Datasource-Uid`
+* `X-Grafana-Org-Id`
+* `X-Panel-Id`
+* `X-Dashboard-Uid`
+
 ## 1.2.1
 
 Updated LICENSE link in README.
