@@ -134,8 +134,8 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 		return nil, err
 	}
 
-	for key, value := range req.Headers {
-		request.Header.Set(key, value)
+	for key, value := range req.GetHTTPHeaders() {
+		request.Header[key] = value
 	}
 	resp, err := d.httpClient.Do(request)
 	if err != nil {
@@ -219,8 +219,8 @@ func (d *Datasource) CheckHealth(ctx context.Context, req *backend.CheckHealthRe
 		return nil, err
 	}
 
-	for key, value := range req.Headers {
-		request.Header.Set(key, value)
+	for key, value := range req.GetHTTPHeaders() {
+		request.Header[key] = value
 	}
 	resp, err := d.httpClient.Do(request)
 	if err != nil {
