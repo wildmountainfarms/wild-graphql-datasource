@@ -18,8 +18,8 @@ jobs:
       - name: Setup Node.js environment
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -45,7 +45,7 @@ jobs:
         if: steps.check-for-backend.outputs.has-backend == 'true'
         uses: actions/setup-go@v3
         with:
-          go-version: '1.21'
+          go-version: "1.21"
 
       - name: Test backend
         if: steps.check-for-backend.outputs.has-backend == 'true'
@@ -71,7 +71,7 @@ jobs:
 
       - name: Start grafana docker
         if: steps.check-for-e2e.outputs.has-e2e == 'true'
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - name: Run e2e tests
         if: steps.check-for-e2e.outputs.has-e2e == 'true'
@@ -79,7 +79,7 @@ jobs:
 
       - name: Stop grafana docker
         if: steps.check-for-e2e.outputs.has-e2e == 'true'
-        run: docker-compose down
+        run: docker compose down
 
       - name: Archive E2E output
         uses: actions/upload-artifact@v3
