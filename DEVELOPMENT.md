@@ -120,6 +120,12 @@ go get -u
 go mod tidy
 ```
 
+Also this for doing a proper upgrade of all npm dependencies: https://grafana.com/developers/plugin-tools/reference/cli-commands#update
+
+```shell
+npx @grafana/create-plugin@latest update
+```
+
 ## Dependency Notes
 
 This section contains notes about dependencies.
