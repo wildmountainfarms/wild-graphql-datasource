@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+Fixed [#9](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/9)
+which was a bug where arrays used inside the variables section would incorrectly get turned into an object before being passed to the backend.
+Additionally, there are many internal dependency upgrades to fix a security vulnerability that prevented 1.3.0 from officially being released.
+
 ## 1.3.0
 
 Merged [#8](https://github.com/wildmountainfarms/wild-graphql-datasource/pull/8)
