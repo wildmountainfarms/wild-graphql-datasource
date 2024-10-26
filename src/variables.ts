@@ -46,11 +46,15 @@ function doInterpolate(object: any, templateSrv: TemplateSrv, scopedVars?: Scope
     case 'string':
       return templateSrv.replace(object, scopedVars)
     case 'object':
-      const newObject: any = {};
-      for (const field in object) {
-        newObject[field] = doInterpolate(object[field], templateSrv, scopedVars);
+      if (Array.isArray(object)) {
+        return object.map(value => doInterpolate(value, templateSrv, scopedVars));
+      } else {
+        const newObject: any = {};
+        for (const field in object) {
+          newObject[field] = doInterpolate(object[field], templateSrv, scopedVars);
+        }
+        return newObject;
       }
-      return newObject;
   }
   return object;
 }

@@ -63,4 +63,14 @@ describe("interpolateVariables", () => {
     });
     expect(templateSrv.replace).toHaveBeenCalledTimes(2)
   });
+  it("Interpolation with array", () => {
+    const templateSrv: TemplateSrv = createTemplateSrv();
+    const variables = {
+      "prices": ["$9.99", 5.0]
+    };
+    const result = interpolateVariables(variables, templateSrv, scopedVars);
+    expect(result).toEqual({
+      "prices": ["replaced:$9.99", 5.0]
+    });
+  });
 });
