@@ -152,7 +152,7 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 	graphQLResponse, responseParseError := graphql.ParseGraphQLResponse(resp.Body)
 	if responseParseError != nil {
 		return &backend.DataResponse{
-			Error:  err,
+			Error:  responseParseError,
 			Status: status,
 		}, nil
 	}
