@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 	"io"
 	"net/http"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 )
 
 type Request struct {
@@ -54,7 +55,7 @@ type ErrorLocation struct {
 	Column int `json:"column"`
 }
 
-func ParseGraphQLResponse(body io.ReadCloser) (*Response, error) {
+func ParseGraphQLResponse(body io.Reader) (*Response, error) {
 	bodyAsBytes, err := io.ReadAll(body)
 	if err != nil {
 		log.DefaultLogger.Error("We don't expect this!")
