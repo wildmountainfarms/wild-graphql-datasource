@@ -85,17 +85,15 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 	fm := framemap.New()
 
 	for _, dataElement := range dataArray {
-		flatData := jsonnode.NewObject()
-		flattenData(dataElement, "", flatData)
-		labels, err := getLabelsFromFlatData(flatData, parsingOption)
+		labels, err := getLabelsFromFlatData(dataElement, parsingOption)
 		if err != nil {
 			return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
 		}
 		row := fm.NewRow(labels)
-		row.FieldOrder = flatData.Keys()
+		row.FieldOrder = dataElement.Keys()
 
-		for _, key := range flatData.Keys() {
-			value := flatData.Get(key)
+		for _, key := range dataElement.Keys() {
+			value := dataElement.Get(key)
 
 			timeField := parsingOption.GetTimeField(key)
 			if timeField != nil {

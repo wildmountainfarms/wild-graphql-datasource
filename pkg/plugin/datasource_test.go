@@ -65,7 +65,7 @@ func TestParsingJsonNestedArray(t *testing.T) {
 }
 	`
 
-	const expectedInlineArrayValue = `{"schema":{"name":"response ","fields":[{"name":"value1","type":"number","typeInfo":{"frame":"float64","nullable":true},"labels":{}},{"name":"value2","type":"number","typeInfo":{"frame":"float64","nullable":true},"labels":{}},{"name":"sub_value.0.value1","type":"string","typeInfo":{"frame":"string","nullable":true},"labels":{}},{"name":"sub_value.0.value2","type":"number","typeInfo":{"frame":"float64","nullable":true},"labels":{}},{"name":"sub_value.0.sub_value.0.value1","type":"string","typeInfo":{"frame":"string","nullable":true},"labels":{}},{"name":"sub_value.0.sub_value.0.value2","type":"number","typeInfo":{"frame":"float64","nullable":true},"labels":{}}]},"data":{"values":[[1],[0],["string"],[1],["string"],[1]]}}`
+	const expectedNestedArrayValue = `{"schema":{"name":"response ","fields":[{"name":"value1","type":"number","typeInfo":{"frame":"float64","nullable":true},"labels":{}},{"name":"value2","type":"number","typeInfo":{"frame":"float64","nullable":true},"labels":{}},{"name":"sub_value","type":"other","typeInfo":{"frame":"json.RawMessage","nullable":true},"labels":{}}]},"data":{"values":[[1],[0],[[{"value1":"string","value2":1,"sub_value":[{"value1":"string","value2":1}]}]]]}}`
 
 	ds, err := NewMockDatasource([]byte(jsonString))
 	if err != nil {
@@ -104,7 +104,7 @@ func TestParsingJsonNestedArray(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if string(data) != expectedInlineArrayValue {
+			if string(data) != expectedNestedArrayValue {
 				t.Errorf("Unexpected JSON frame data: %s", string(data))
 			}
 		}
