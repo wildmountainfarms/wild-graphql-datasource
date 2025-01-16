@@ -165,7 +165,7 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 			errorsString += graphQLError.Message
 		}
 		return &backend.DataResponse{
-			Error:  errors.New(fmt.Sprintf("GraphQL response had %d error(s): %s", len(graphQLResponse.Errors), errorsString)),
+			Error:  fmt.Errorf("GraphQL response had %d error(s): %s", len(graphQLResponse.Errors), errorsString),
 			Status: status,
 		}, nil
 	}

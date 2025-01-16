@@ -2,7 +2,6 @@ package jsonnode
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 )
@@ -32,5 +31,5 @@ func decodeNode(token json.Token, decoder *json.Decoder) (Node, error) {
 	if primitiveNode != nil {
 		return primitiveNode, nil
 	}
-	return nil, errors.New(fmt.Sprintf("Unknown token: %v", token))
+	return nil, fmt.Errorf("Unknown token: %v", token)
 }
