@@ -75,13 +75,15 @@ func (o *Object) String() string {
 }
 func (o *Object) Serialize() json.RawMessage {
 	var r = []byte{'{'}
+	var convertedArray [][]byte
 	for _, key := range o.Keys() {
 		value := o.Get(key)
-
-		r = append(r, []byte(String(key).Serialize())...)
-		r = append(r, ':')
-		r = append(r, []byte(value.Serialize())...)
+		kv := String(key).Serialize()
+		kv = append(kv, ':')
+		kv = append(kv, []byte(value.Serialize())...)
+		convertedArray = append(convertedArray, kv)
 	}
+	r = append(r, bytes.Join(convertedArray, []byte{','})...)
 	r = append(r, '}')
 	return r
 }
