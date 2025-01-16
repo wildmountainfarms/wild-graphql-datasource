@@ -14,6 +14,7 @@ import (
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/queryvariables"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/graphql"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/mock"
 )
 
 // Make sure Datasource implements required interfaces. This is important to do
@@ -46,11 +47,22 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	}, nil
 }
 
+func NewMockDatasource(resp []byte) (*Datasource, error) {
+	return &Datasource{
+		httpClient: mock.NewClient(resp),
+	}, nil
+}
+
+// Client \\
+type Client interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 // Datasource is an example datasource which can respond to data queries, reports
 // its health and has streaming skills.
 type Datasource struct {
 	settings   backend.DataSourceInstanceSettings
-	httpClient *http.Client
+	httpClient Client
 }
 
 // Dispose here tells plugin SDK that plugin wants to clean up resources when a new instance

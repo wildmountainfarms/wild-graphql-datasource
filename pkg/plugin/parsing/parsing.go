@@ -144,6 +144,10 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					//   but we decide not to because alerting queries require float64s to be used
 				case jsonnode.Null:
 					row.FieldMap[key] = typedValue
+
+				case *jsonnode.Array:
+					row.FieldMap[key] = typedValue
+
 				default:
 					return nil, fmt.Errorf("Unsupported type! type: %v", reflect.TypeOf(typedValue)), UNKNOWN_ERROR
 				}
@@ -207,6 +211,7 @@ func flattenArray(array *jsonnode.Array, prefix string, flattenedData *jsonnode.
 
 func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *jsonnode.Object) {
 	for _, key := range originalData.Keys() {
+
 		value := originalData.Get(key)
 		switch typedValue := value.(type) {
 		case *jsonnode.Object:
