@@ -1,15 +1,15 @@
 package parsing
 
 import (
-	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/framemap"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
-	"reflect"
-	"strings"
-	"time"
 )
 
 // the purpose of this file is to parse JSON data with configuration from a ParsingOption
@@ -32,19 +32,19 @@ func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) 
 	for _, part := range split[:len(split)-1] {
 		newData := currentData.Get(part)
 		if newData == nil {
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s does not exist! dataPath: %s", part, dataPath))
+			return nil, fmt.Errorf("Part of data path: %s does not exist! dataPath: %s", part, dataPath)
 		}
 		switch value := newData.(type) {
 		case *jsonnode.Object:
 			currentData = value
 		default:
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! dataPath: %s", part, dataPath))
+			return nil, fmt.Errorf("Part of data path: %s is not a nested object! dataPath: %s", part, dataPath)
 		}
 	}
 	// after this for loop, currentData should be an array or an object if everything is going well
 	finalData := currentData.Get(split[len(split)-1])
 	if finalData == nil {
-		return nil, errors.New(fmt.Sprintf("Final part of data path: %s does not exist! dataPath: %s", split[len(split)-1], dataPath))
+		return nil, fmt.Errorf("Final part of data path: %s does not exist! dataPath: %s", split[len(split)-1], dataPath)
 	}
 	return finalData, nil
 }
@@ -64,7 +64,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			case *jsonnode.Object:
 				dataArray[i] = typedElement
 			default:
-				return nil, errors.New(fmt.Sprintf("One of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element))), FRIENDLY_ERROR
+				return nil, fmt.Errorf("One of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element)), FRIENDLY_ERROR
 			}
 		}
 	case *jsonnode.Object:
@@ -74,7 +74,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			value,
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array or object! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))), FRIENDLY_ERROR
+		return nil, fmt.Errorf("Final part of data path: is not an array or object! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value)), FRIENDLY_ERROR
 	}
 
 	// We store a fieldMap inside of this frameMap.
@@ -107,7 +107,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					//   and also consider using time.RFC339Nano instead
 					parsedTime, err := time.Parse(time.RFC3339, typedValue.String())
 					if err != nil {
-						return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
+						return nil, fmt.Errorf("Time could not be parsed! Time: %s", typedValue), FRIENDLY_ERROR
 					}
 					timePointer = &parsedTime
 				case jsonnode.Number:
@@ -121,7 +121,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					timePointer = nil
 				default:
 					// This case should never happen because we never expect other types to pop up here
-					return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
+					return nil, fmt.Errorf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue)), FRIENDLY_ERROR
 				}
 				if timePointer == nil {
 					row.FieldMap[key] = jsonnode.NULL
@@ -137,15 +137,19 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 				case jsonnode.Number:
 					parsedValue, err := typedValue.Float64()
 					if err != nil {
-						return nil, errors.New(fmt.Sprintf("Could not parse number: %s", typedValue.String())), UNKNOWN_ERROR
+						return nil, fmt.Errorf("Could not parse number: %s", typedValue.String()), UNKNOWN_ERROR
 					}
 					row.FieldMap[key] = parsedValue
 					// NOTE: We are allowed to store a jsonnode.Number type directly into the FieldMap (it's part of the contract to support that),
 					//   but we decide not to because alerting queries require float64s to be used
 				case jsonnode.Null:
 					row.FieldMap[key] = typedValue
+
+				case *jsonnode.Array:
+					row.FieldMap[key] = typedValue
+
 				default:
-					return nil, errors.New(fmt.Sprintf("Unsupported type! type: %v", reflect.TypeOf(typedValue))), UNKNOWN_ERROR
+					return nil, fmt.Errorf("Unsupported type! type: %v", reflect.TypeOf(typedValue)), UNKNOWN_ERROR
 				}
 			}
 		}
@@ -170,7 +174,7 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 			if fieldValue == nil {
 				fieldConfig := labelOption.FieldConfig
 				if fieldConfig != nil && fieldConfig.Required {
-					return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value))
+					return nil, fmt.Errorf("Label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value)
 				} else if fieldConfig != nil && fieldConfig.DefaultValue != nil {
 					labels[labelOption.Name] = *fieldConfig.DefaultValue
 				}
@@ -180,7 +184,7 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 				case jsonnode.String:
 					labels[labelOption.Name] = typedFieldValue.String()
 				default:
-					return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue)))
+					return nil, fmt.Errorf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue))
 				}
 			}
 		}
@@ -207,6 +211,7 @@ func flattenArray(array *jsonnode.Array, prefix string, flattenedData *jsonnode.
 
 func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *jsonnode.Object) {
 	for _, key := range originalData.Keys() {
+
 		value := originalData.Get(key)
 		switch typedValue := value.(type) {
 		case *jsonnode.Object:
