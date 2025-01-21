@@ -250,6 +250,39 @@ References:
 
 Remember that Grafana transformations are not the preferred way of doing this, and you should prefer to use the label functionality provided.
 
+
+### Datasource Provisioning
+
+This section goes over provisioning, an advanced feature of Grafana.
+
+#### Provisioning Custom Headers
+
+Custom headers must be configured on a per-datasource basis, not a per-query basis.
+
+This configuration is consistent with [Custom HTTP headers for data sources](https://grafana.com/docs/grafana/latest/administration/provisioning/#custom-http-headers-for-data-sources).
+This means that provisioning headers is done the same way as other HTTP Grafana data sources.
+
+```yaml
+apiVersion: 1
+
+datasources:
+  - name: 'My Cool GraphQL Datasource Name'
+    type: 'retrodaredevil-wildgraphql-datasource'
+    url: 'https://swapi-graphql.netlify.app/graphql'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
+    jsonData:
+      httpHeaderName1: 'HeaderName'
+      httpHeaderName2: 'Authorization'
+    secureJsonData:
+      httpHeaderValue1: 'HeaderValue'
+      httpHeaderValue2: 'Bearer XXXXXXXXX'
+```
+
+
 ---
 
 ## FAQ
