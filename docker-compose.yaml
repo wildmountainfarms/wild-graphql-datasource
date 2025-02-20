@@ -16,10 +16,13 @@ services:
     security_opt:
       - seccomp:unconfined # To allow debugging with Delve
     ports:
-      - 3000:3000/tcp
-      - 2345:2345/tcp
+      - "3000:3000/tcp"
+      - "2345:2345/tcp"
     volumes:
-      - ./dist:/var/lib/grafana/plugins/retrodaredevil-wildgraphql-datasource
-      - ./provisioning:/etc/grafana/provisioning
-      - ./provisioned-dashboards:/provisioned-dashboards
-      - .:/root/retrodaredevil-wildgraphql-datasource
+      - ./dist:/var/lib/grafana/plugins/retrodaredevil-wildgraphql-datasource:ro
+      - ./provisioning:/etc/grafana/provisioning:ro
+      - ./provisioned-dashboards:/provisioned-dashboards:ro
+      - .:/root/retrodaredevil-wildgraphql-datasource:ro
+  graphql-echo:
+    container_name: 'grafana-dev-wildgraphql-graphql-echo'
+    image: 'ghcr.io/retrodaredevil/graphql-echo:0.1'

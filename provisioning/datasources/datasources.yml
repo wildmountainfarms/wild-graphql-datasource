@@ -18,6 +18,15 @@ datasources:
     orgId: 1
     version: 1
     editable: true
+  - name: 'GraphQL Echo GraphQL'
+    type: 'retrodaredevil-wildgraphql-datasource'
+    uid: 'a91208a2-644b-4177-aa96-08389eb61e32'  # A consistent ID allows this to be referenced in the provisioned dashboard
+    url: 'http://graphql-echo:8080/graphql'
+    access: proxy
+    isDefault: false
+    orgId: 1
+    version: 1
+    editable: true
   - name: 'SolarThing GraphQL'
     type: 'retrodaredevil-wildgraphql-datasource'
     uid: 'fa66cf68-c3d8-4490-a89d-0c3b6a87fff8'
