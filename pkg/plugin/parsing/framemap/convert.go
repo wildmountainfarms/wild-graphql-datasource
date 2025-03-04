@@ -3,11 +3,12 @@ package framemap
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+	"time"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/fieldsort"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
-	"reflect"
-	"time"
 )
 
 func (f *FrameMap) getAllFields() []string {
@@ -73,7 +74,7 @@ func (f *FrameMap) createField(targetNode *frameNode, fieldKey string) (*data.Fi
 		n := frameMapIterator.Value()
 		for rowIndex, row := range n.rows {
 			if value, exists := row.FieldMap[fieldKey]; exists {
-				switch value.(type) {
+				switch value := value.(type) {
 				case jsonnode.Null:
 					foundNull = true
 				case jsonnode.Number:
@@ -86,6 +87,11 @@ func (f *FrameMap) createField(targetNode *frameNode, fieldKey string) (*data.Fi
 					return createFieldForNativeType[bool](targetNode, fieldKey), nil
 				case float64:
 					return createFieldForNativeType[float64](targetNode, fieldKey), nil
+				case *jsonnode.Array:
+					var values []*json.RawMessage
+					vv := value.Serialize()
+					values = append(values, &vv)
+					return data.NewField(fieldKey, targetNode.labels, values), nil
 				default:
 					return nil, fmt.Errorf("field %s of row %d has unknown type: %v", fieldKey, rowIndex, reflect.TypeOf(value))
 				}
@@ -124,6 +130,7 @@ func (f *FrameMap) ToFrames() ([]*data.Frame, error) {
 			if err != nil {
 				return nil, err
 			}
+
 			frame.Fields = append(frame.Fields, field)
 		}
 		r = append(r, frame)
