@@ -3,7 +3,6 @@ package jsonnode
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -22,7 +21,7 @@ func NewObject() *Object {
 
 func (o *Object) decodeJSON(startToken json.Token, decoder *json.Decoder) error {
 	if startToken != json.Delim('{') {
-		return errors.New(fmt.Sprintf("Token is not the start of an object! Token: %v", startToken))
+		return fmt.Errorf("Token is not the start of an object! Token: %v", startToken)
 	}
 	for {
 		keyToken, err := decoder.Token()
@@ -37,7 +36,7 @@ func (o *Object) decodeJSON(startToken json.Token, decoder *json.Decoder) error 
 		case string:
 			key = typedToken
 		default:
-			return errors.New(fmt.Sprintf("invalid token for key to object. token: %v", keyToken))
+			return fmt.Errorf("invalid token for key to object. token: %v", keyToken)
 		}
 
 		token, err := decoder.Token()
@@ -76,13 +75,15 @@ func (o *Object) String() string {
 }
 func (o *Object) Serialize() json.RawMessage {
 	var r = []byte{'{'}
+	var convertedArray [][]byte
 	for _, key := range o.Keys() {
 		value := o.Get(key)
-
-		r = append(r, []byte(String(key).Serialize())...)
-		r = append(r, ':')
-		r = append(r, []byte(value.Serialize())...)
+		kv := String(key).Serialize()
+		kv = append(kv, ':')
+		kv = append(kv, []byte(value.Serialize())...)
+		convertedArray = append(convertedArray, kv)
 	}
+	r = append(r, bytes.Join(convertedArray, []byte{','})...)
 	r = append(r, '}')
 	return r
 }
