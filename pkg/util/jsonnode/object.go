@@ -20,6 +20,30 @@ func NewObject() *Object {
 	return &object
 }
 
+func (o *Object) Clone() *Object {
+	copiedData := make(map[string]Node, len(o.data))
+
+	for key, node := range o.data {
+		if node != nil {
+			copiedData[key] = node.DeepCopy()
+		} else {
+			// TODO are nil values allowed?
+			copiedData[key] = nil
+		}
+	}
+
+	copiedOrder := make([]string, len(o.order))
+	copy(copiedOrder, o.order)
+
+	return &Object{
+		data:  copiedData,
+		order: copiedOrder,
+	}
+}
+func (o *Object) DeepCopy() Node {
+	return o.Clone()
+}
+
 func (o *Object) decodeJSON(startToken json.Token, decoder *json.Decoder) error {
 	if startToken != json.Delim('{') {
 		return errors.New(fmt.Sprintf("Token is not the start of an object! Token: %v", startToken))
@@ -76,9 +100,12 @@ func (o *Object) String() string {
 }
 func (o *Object) Serialize() json.RawMessage {
 	var r = []byte{'{'}
-	for _, key := range o.Keys() {
+	for i, key := range o.Keys() {
 		value := o.Get(key)
 
+		if i != 0 {
+			r = append(r, ',')
+		}
 		r = append(r, []byte(String(key).Serialize())...)
 		r = append(r, ':')
 		r = append(r, []byte(value.Serialize())...)
@@ -111,4 +138,11 @@ func (o *Object) Put(key string, value Node) {
 		o.order = append(o.order, key)
 	}
 	o.data[key] = value
+}
+
+func (o *Object) PutFrom(other *Object) {
+	for _, key := range other.Keys() {
+		value := other.Get(key)
+		o.Put(key, value)
+	}
 }

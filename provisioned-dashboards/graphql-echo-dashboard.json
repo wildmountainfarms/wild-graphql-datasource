@@ -193,6 +193,127 @@
       "title": "All headers",
       "transformations": [],
       "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"serverName\"]} - ${__field.labels[\"nodeData.nodeName\"]} - ${__field.labels[\"nodeData.datapoints.processorTemperatures.processor\"]}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 3,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries",
+              "explodeArrayPaths": [
+                "nodeData.datapoints.processorTemperatures",
+                "nodeData.datapoints",
+                "nodeData"
+              ],
+              "timeFields": [
+                {
+                  "timePath": "nodeData.datapoints.dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Generated Processor Temperatures",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "serverName",
+              "nodeData.nodeName",
+              "nodeData.datapoints.processorTemperatures.processor"
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
     }
   ],
   "refresh": "",

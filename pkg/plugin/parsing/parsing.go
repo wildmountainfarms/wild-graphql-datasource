@@ -8,6 +8,7 @@ import (
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 	"reflect"
+	"slices"
 	"strings"
 	"time"
 )
@@ -38,7 +39,8 @@ func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) 
 		case *jsonnode.Object:
 			currentData = value
 		default:
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! dataPath: %s", part, dataPath))
+			// TODO if we come across an array, we should be able to index into it using the .<number> notation, like we do with fields
+			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! Type is %v! dataPath: %s", part, reflect.TypeOf(value), dataPath))
 		}
 	}
 	// after this for loop, currentData should be an array or an object if everything is going well
@@ -85,67 +87,72 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 	fm := framemap.New()
 
 	for _, dataElement := range dataArray {
-		flatData := jsonnode.NewObject()
-		flattenData(dataElement, "", flatData)
-		labels, err := getLabelsFromFlatData(flatData, parsingOption)
-		if err != nil {
-			return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
-		}
-		row := fm.NewRow(labels)
-		row.FieldOrder = flatData.Keys()
+		//theFlatData := jsonnode.NewObject()
+		//flattenData(dataElement, "", theFlatData)
+		flatDataExplodedArray := flattenOrExplode(dataElement, "", parsingOption.ExplodeArrayPaths)
 
-		for _, key := range flatData.Keys() {
-			value := flatData.Get(key)
+		//for _, flatData := range []*jsonnode.Object{theFlatData} {
+		for _, flatData := range flatDataExplodedArray {
+			labels, err := getLabelsFromFlatData(flatData, parsingOption)
+			if err != nil {
+				return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
+			}
+			row := fm.NewRow(labels)
+			row.FieldOrder = flatData.Keys()
 
-			timeField := parsingOption.GetTimeField(key)
-			if timeField != nil {
-				var timePointer *time.Time
-				switch typedValue := value.(type) {
-				case jsonnode.String:
-					// TODO allow user to customize time format
-					// Look at https://stackoverflow.com/questions/522251/whats-the-difference-between-iso-8601-and-rfc-3339-date-formats
-					//   and also consider using time.RFC339Nano instead
-					parsedTime, err := time.Parse(time.RFC3339, typedValue.String())
-					if err != nil {
-						return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
+			for _, key := range flatData.Keys() {
+				value := flatData.Get(key)
+
+				timeField := parsingOption.GetTimeField(key)
+				if timeField != nil {
+					var timePointer *time.Time
+					switch typedValue := value.(type) {
+					case jsonnode.String:
+						// TODO allow user to customize time format
+						// Look at https://stackoverflow.com/questions/522251/whats-the-difference-between-iso-8601-and-rfc-3339-date-formats
+						//   and also consider using time.RFC339Nano instead
+						parsedTime, err := time.Parse(time.RFC3339, typedValue.String())
+						if err != nil {
+							return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
+						}
+						timePointer = &parsedTime
+					case jsonnode.Number:
+						epochMillis, err := typedValue.Int64()
+						if err != nil {
+							return nil, err, UNKNOWN_ERROR
+						}
+						t := time.UnixMilli(epochMillis)
+						timePointer = &t
+					case jsonnode.Null:
+						timePointer = nil
+					default:
+						// This case should never happen because we never expect other types to pop up here
+						return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
 					}
-					timePointer = &parsedTime
-				case jsonnode.Number:
-					epochMillis, err := typedValue.Int64()
-					if err != nil {
-						return nil, err, UNKNOWN_ERROR
+					if timePointer == nil {
+						row.FieldMap[key] = jsonnode.NULL
+					} else {
+						row.FieldMap[key] = *timePointer
 					}
-					t := time.UnixMilli(epochMillis)
-					timePointer = &t
-				case jsonnode.Null:
-					timePointer = nil
-				default:
-					// This case should never happen because we never expect other types to pop up here
-					return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
-				}
-				if timePointer == nil {
-					row.FieldMap[key] = jsonnode.NULL
 				} else {
-					row.FieldMap[key] = *timePointer
-				}
-			} else {
-				switch typedValue := value.(type) {
-				case jsonnode.String:
-					row.FieldMap[key] = typedValue.String()
-				case jsonnode.Boolean:
-					row.FieldMap[key] = typedValue.Bool()
-				case jsonnode.Number:
-					parsedValue, err := typedValue.Float64()
-					if err != nil {
-						return nil, errors.New(fmt.Sprintf("Could not parse number: %s", typedValue.String())), UNKNOWN_ERROR
+					switch typedValue := value.(type) {
+					case jsonnode.String:
+						row.FieldMap[key] = typedValue.String()
+					case jsonnode.Boolean:
+						row.FieldMap[key] = typedValue.Bool()
+					case jsonnode.Number:
+						parsedValue, err := typedValue.Float64()
+						if err != nil {
+							return nil, errors.New(fmt.Sprintf("Could not parse number: %s", typedValue.String())), UNKNOWN_ERROR
+						}
+						row.FieldMap[key] = parsedValue
+						// NOTE: We are allowed to store a jsonnode.Number type directly into the FieldMap (it's part of the contract to support that),
+						//   but we decide not to because alerting queries require float64s to be used
+					case jsonnode.Null:
+						row.FieldMap[key] = typedValue
+					default:
+						return nil, errors.New(fmt.Sprintf("Unsupported type! type: %v", reflect.TypeOf(typedValue))), UNKNOWN_ERROR
 					}
-					row.FieldMap[key] = parsedValue
-					// NOTE: We are allowed to store a jsonnode.Number type directly into the FieldMap (it's part of the contract to support that),
-					//   but we decide not to because alerting queries require float64s to be used
-				case jsonnode.Null:
-					row.FieldMap[key] = typedValue
-				default:
-					return nil, errors.New(fmt.Sprintf("Unsupported type! type: %v", reflect.TypeOf(typedValue))), UNKNOWN_ERROR
 				}
 			}
 		}
@@ -178,6 +185,12 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 			} else {
 				switch typedFieldValue := fieldValue.(type) {
 				case jsonnode.String:
+					labels[labelOption.Name] = typedFieldValue.String()
+				case jsonnode.Number:
+					// TODO when we have a number that is a label, it will automatically be used by Grafana as a datapoint. Should we add logic to stop that from happening? (this todo comment isn't technically relevant to this specific area of the code)
+					//   A potential solution is that maybe we should have an option to remove a field if it is being used as a label
+
+					// TODO decide if we want to "normalize" when converting to string -- should 5.0 and 5 be the same string value?
 					labels[labelOption.Name] = typedFieldValue.String()
 				default:
 					return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue)))
@@ -217,4 +230,70 @@ func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *js
 			flattenedData.Put(prefix+key, typedValue)
 		}
 	}
+}
+
+func crossObjects(a []*jsonnode.Object, b []*jsonnode.Object) []*jsonnode.Object {
+	slice := make([]*jsonnode.Object, len(a)*len(b))
+	// TODO the ordering here determines the order of stuff in the dataframes. Consider making sure this is what we want
+	for i, bObject := range b {
+		for j, aObject := range a {
+			newObject := jsonnode.NewObject()
+			newObject.PutFrom(aObject)
+			newObject.PutFrom(bObject)
+
+			slice[j+i*len(a)] = newObject
+		}
+	}
+	return slice
+}
+func explodeArray(data []*jsonnode.Object, nestedArrayFullKey string, explodeDataPaths []string, nestedArray *jsonnode.Array) []*jsonnode.Object {
+	var r []*jsonnode.Object
+	for _, nestedArrayElement := range *nestedArray {
+		for _, dataObject := range data {
+			switch typedValue := nestedArrayElement.(type) {
+			case *jsonnode.Object:
+				result := flattenOrExplode(typedValue, nestedArrayFullKey+".", explodeDataPaths)
+				resultCrossed := crossObjects([]*jsonnode.Object{dataObject}, result)
+				r = append(r, resultCrossed...)
+			case *jsonnode.Array:
+				// TODO an array nested within an array? Is that allowed?
+				panic("TODO. This is not supported! an array within an array?? This probably isn't too bad to implement, but I don't feel like it rn")
+			default:
+				newObject := dataObject.Clone()
+				newObject.Put(nestedArrayFullKey, typedValue)
+				r = append(r, newObject)
+			}
+		}
+	}
+	return r
+}
+
+func flattenOrExplode(data *jsonnode.Object, prefix string, explodeDataPaths []string) []*jsonnode.Object {
+	var r = []*jsonnode.Object{
+		jsonnode.NewObject(),
+	}
+	for _, key := range data.Keys() {
+		value := data.Get(key)
+		fullKey := prefix + key
+		switch typedValue := value.(type) {
+		case *jsonnode.Object:
+			nestedDataArray := flattenOrExplode(typedValue, fullKey+".", explodeDataPaths)
+			r = crossObjects(r, nestedDataArray)
+		case *jsonnode.Array:
+			if slices.Contains(explodeDataPaths, fullKey) {
+				r = explodeArray(r, fullKey, explodeDataPaths, typedValue)
+			} else {
+				flattenedData := jsonnode.NewObject()
+				flattenArray(typedValue, prefix+key+".", flattenedData)
+				for _, object := range r {
+					object.PutFrom(flattenedData)
+				}
+			}
+		default:
+			for _, object := range r {
+				object.Put(fullKey, typedValue)
+			}
+		}
+	}
+	return r
 }

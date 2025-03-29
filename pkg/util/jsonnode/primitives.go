@@ -9,6 +9,9 @@ import (
 type Number json.Number
 
 func (_ Number) sealed() {}
+func (n Number) DeepCopy() Node {
+	return n
+}
 func (n Number) String() string {
 	return n.Number().String()
 }
@@ -38,6 +41,9 @@ type Boolean bool
 
 func (b Boolean) sealed() {}
 
+func (b Boolean) DeepCopy() Node {
+	return b
+}
 func (b Boolean) String() string {
 	if b {
 		return "true"
@@ -58,6 +64,9 @@ type String string
 
 func (_ String) sealed() {}
 
+func (s String) DeepCopy() Node {
+	return s
+}
 func (s String) String() string {
 	return string(s)
 }
@@ -78,6 +87,9 @@ const NULL Null = false
 
 func (_ Null) sealed() {}
 
+func (n Null) DeepCopy() Node {
+	return n
+}
 func (n Null) String() string {
 	return "null"
 }

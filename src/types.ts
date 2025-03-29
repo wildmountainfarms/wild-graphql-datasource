@@ -30,6 +30,7 @@ export const DEFAULT_LABEL_OPTION_FIELD_CONFIG: LabelOptionFieldConfig = { // om
 export interface ParsingOption {
   /** Required. The path to the array of data or object of data. Note: An empty string is valid -- it refers to the top-most data */
   dataPath: string;
+  explodeArrayPaths?: string[];
   /**
    * The path to the time. An undefined value or an empty array means that no fields will be interpreted as time fields.
    *

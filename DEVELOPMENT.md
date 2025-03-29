@@ -88,6 +88,19 @@ mage -v build:linux
 npm run server
 ```
 
+⭐⭐ Or more simply, in one shell run this
+```shell
+npm run dev
+# keep this in the background
+```
+And in another shell:
+```shell
+# Note that build:debug is used here to allow debugging
+mage -v build:debug && npm run server
+# Kill and restart this as necessary
+```
+
+
 ### Recommended development environment
 
 You may choose to use VS Code, which has free tools for developing TypeScript and Go code.

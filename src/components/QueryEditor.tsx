@@ -164,35 +164,53 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
       )
     });
   };
-  const setTimeField = (parsingOptionIndex: number, timeFieldIndex: number, newTimeField: TimeField) => {
+  const updateParsingOptionArray = <
+    K extends keyof ParsingOption,
+    T extends ParsingOption[K],
+  >(
+    arrayKey: K,
+    parsingOptionIndex: number,
+    itemIndex: number,
+    // TODO figure out how to do generics better here
+    // @ts-ignore
+    newItem: ParsingOption[K][number],
+) => {
     onChange({
       ...query,
       parsingOptions: query.parsingOptions.map((parsingOption, index) => {
         if (index !== parsingOptionIndex) {
           return parsingOption;
         }
-        if (parsingOption.timeFields === undefined) {
+
+        // TODO note that T[] is not technically correct right here
+        const currentArray = parsingOption[arrayKey] as T[] | undefined;
+
+        if (!currentArray) {
           return {
             ...parsingOption,
-            timeFields: [newTimeField]
-          }
+            [arrayKey]: [newItem]
+          };
         }
-        if (timeFieldIndex >= parsingOption.timeFields.length) {
+
+        if (itemIndex >= currentArray.length) {
           return {
             ...parsingOption,
-            timeFields: [...parsingOption.timeFields, newTimeField]
-          }
+            [arrayKey]: [...currentArray, newItem]
+          };
         }
+
         return {
           ...parsingOption,
-          timeFields: parsingOption.timeFields!.map((timeField, index) => index === timeFieldIndex
-            ? newTimeField
-            : timeField
-          )
+          [arrayKey]: currentArray.map((item, i) => i === itemIndex ? newItem : item)
         };
-        }
-      )
-    })
+      })
+    });
+  };
+  const setExplodeArrayPath = (parsingOptionIndex: number, explodeArrayPathsIndex: number, newExplodeArrayPath: string) => {
+    updateParsingOptionArray("explodeArrayPaths", parsingOptionIndex, explodeArrayPathsIndex, newExplodeArrayPath);
+  };
+  const setTimeField = (parsingOptionIndex: number, timeFieldIndex: number, newTimeField: TimeField) => {
+    updateParsingOptionArray("timeFields", parsingOptionIndex, timeFieldIndex, newTimeField);
   };
   const setLabelOption = (parsingOptionIndex: number, labelOptionIndex: number, newLabelOption: LabelOption) => {
     onChange({
@@ -247,6 +265,24 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
       )
     });
   };
+  const deleteExplodeArrayPath = (parsingOptionIndex: number, explodeArrayPathIndex: number) => {
+    onChange({
+      ...query,
+      parsingOptions: query.parsingOptions.map((parsingOption, index) => {
+          if (index === parsingOptionIndex) {
+            const newExplodeArrayPaths: string[] = [];
+            newExplodeArrayPaths.push(...parsingOption.explodeArrayPaths!.slice(0, explodeArrayPathIndex));
+            newExplodeArrayPaths.push(...parsingOption.explodeArrayPaths!.slice(explodeArrayPathIndex + 1, parsingOption.explodeArrayPaths!.length));
+            return {
+              ...parsingOption,
+              explodeArrayPaths: newExplodeArrayPaths,
+            };
+          }
+          return parsingOption;
+        }
+      )
+    });
+  }
   const deleteTimeField = (parsingOptionIndex: number, timeFieldIndex: number) => {
     onChange({
       ...query,
@@ -412,6 +448,10 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
       <h3 className="page-heading">Parsing Options</h3>
       <div className="gf-form-group">
         {query.parsingOptions.map((parsingOption, parsingOptionIndex) => {
+          const displayedExplodeArrayPaths = [
+            ...(parsingOption.explodeArrayPaths ?? []),
+            ""
+          ];
           const displayedTimeFields = [
             ...(parsingOption.timeFields ?? []),
             {
@@ -457,6 +497,32 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
                   width={INPUT_WIDTH}/>
               </InlineField>
             </div>
+            {displayedExplodeArrayPaths.map((explodeArrayPath, explodeArrayPathIndex) => <>
+              <div className="gf-form-inline">
+                <InlineField
+                  label={explodeArrayPathIndex === displayedExplodeArrayPaths.length - 1 ? "Add Explode Array Path" : "Explode Array Path"}
+                  labelWidth={LABEL_WIDTH}
+                  tooltip="Dot-delimited path to arrays within the response to explode to make multiple rows, rather than multiple columns."
+                >
+                  <Input
+                    onChange={event => setExplodeArrayPath(parsingOptionIndex, explodeArrayPathIndex, event.currentTarget.value)}
+                    value={explodeArrayPath}
+                    onBlur={event => {
+                      if (explodeArrayPathIndex !== displayedExplodeArrayPaths.length - 1 && explodeArrayPath === "") {
+                        deleteExplodeArrayPath(parsingOptionIndex, explodeArrayPathIndex);
+                      }
+                    }}
+                    width={INPUT_WIDTH}/>
+                </InlineField>
+                {explodeArrayPathIndex !== displayedExplodeArrayPaths.length - 1 &&
+                  <IconButton
+                    name={"minus"}
+                    aria-label="Remove explode array path"
+                    onClick={() => deleteExplodeArrayPath(parsingOptionIndex, explodeArrayPathIndex)}
+                  />
+                }
+              </div>
+            </>)}
             {displayedTimeFields.map((timeField, timeFieldIndex) => <>
               <div className="gf-form-inline">
                 <InlineField
@@ -471,7 +537,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
                     })}
                     value={timeField.timePath}
                     onBlur={event => {
-                      if (timeField.timePath === "") {
+                      if (timeFieldIndex !== displayedTimeFields.length && timeField.timePath === "") {
                         deleteTimeField(parsingOptionIndex, timeFieldIndex);
                       }
                     }}

@@ -12,7 +12,8 @@ type QueryModel struct {
 
 type ParsingOption struct {
 	// The path from the root to the array. This is dot-delimited
-	DataPath string `json:"dataPath"`
+	DataPath          string   `json:"dataPath"`
+	ExplodeArrayPaths []string `json:"explodeArrayPaths"`
 	// the time path relative to the data path.
 	TimeFields   []TimeField   `json:"timeFields"`
 	LabelOptions []LabelOption `json:"labelOptions"`

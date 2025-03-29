@@ -17,6 +17,22 @@ func NewArray() *Array {
 
 func (_ *Array) sealed() {}
 
+func (a *Array) Clone() *Array {
+	copiedArray := make(Array, len(*a))
+
+	for i, node := range *a {
+		// TODO put tests around if a nil node is even valid here
+		if node != nil {
+			copiedArray[i] = node.DeepCopy()
+		}
+	}
+
+	return &copiedArray
+}
+func (a *Array) DeepCopy() Node {
+	return a.Clone()
+}
+
 func (a *Array) String() string {
 	var stringArray []string
 	for _, node := range *a {
@@ -67,4 +83,8 @@ func (a *Array) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	return a.decodeJSON(token, d)
+}
+
+func (a *Array) Add(node Node) {
+	*a = append(*a, node)
 }

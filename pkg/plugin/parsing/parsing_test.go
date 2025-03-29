@@ -1,90 +1,73 @@
 package parsing
 
 import (
-	"bytes"
 	"encoding/json"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 	"reflect"
 	"testing"
 )
 
-func TestParsingJsonNumbersAsFloat64Bad(t *testing.T) {
+func TestFlattenOrExplode(t *testing.T) {
 	jsonString := `
 {
-  "a": 9223372036854775807,
-  "b": 9223372036854775806.0
+  "serverName": "awesome sauce",
+  "data": [
+    {
+      "dateMillis": 1234,
+      "node": "node 1",
+      "data": [
+        { "processor": 0, "temperature": 30.2 },
+        { "processor": 1, "temperature": 31 }
+      ]
+    },
+    {
+      "dateMillis": 12345,
+      "node": "node 2",
+      "data": [
+        { "processor": 0, "temperature": 35.2 },
+        { "processor": 1, "temperature": 33.0 }
+      ]
+    }
+  ]
 }
 `
-	jsonObject := map[string]interface{}{}
-
-	err := json.Unmarshal([]byte(jsonString), &jsonObject)
+	var object = jsonnode.NewObject()
+	err := json.Unmarshal([]byte(jsonString), &object)
 	if err != nil {
-		t.Error(err)
+		t.Fatal("Could not unmarshal JSON", err)
 	}
-	a, aExists := jsonObject["a"]
-	b, bExists := jsonObject["b"]
-	if !aExists || !bExists {
-		t.Fatal("something does not exist")
+	resultsWithMisconfiguredPaths := flattenOrExplode(object, "", []string{"data.data"})
+	if len(resultsWithMisconfiguredPaths) != 1 {
+		t.Errorf("When we misconfigure the explodeDataPaths, we expect a length of 1, but got %d", len(resultsWithMisconfiguredPaths))
 	}
-	//t.Log(fmt.Sprintf("Values of a: %d , b: %d", a, b))
-	//t.Log(fmt.Sprintf("Types of a: %v , b: %v", reflect.TypeOf(a), reflect.TypeOf(b)))
-	if reflect.TypeOf(a) != reflect.TypeOf(float64(0)) {
-		t.Error("Type of a should be float64 (this is the default)")
+	results := flattenOrExplode(object, "", []string{"data", "data.data"})
+	if len(results) != 4 {
+		t.Fatalf("Incorrect results size! size is %d", len(results))
 	}
-	if reflect.TypeOf(b) != reflect.TypeOf(float64(0)) {
-		t.Error("Type of b should be float64 (this is the default)")
+	for i, result := range results {
+		serverNameNode := result.Get("serverName")
+		if serverName, ok := serverNameNode.(jsonnode.String); ok {
+			if serverName.String() != "awesome sauce" {
+				t.Errorf("Element %d had unexpected serverName value: %s", i, serverName)
+			}
+		} else {
+			t.Errorf("Unexpected type for element %d temperature. type: %v", i, reflect.TypeOf(serverNameNode))
+		}
 	}
-	if a == 9223372036854775807 { // this is the maximum value of an int64, we show that it cannot be represented by a float
-		t.Error("We don't expect a float64 to be able to represent the maximum int64 value")
+	// Note that we are testing that the strings remain unchanged for the number type (some of these have a trailing ".0", others do not)
+	for i, expectedTemperature := range []string{"30.2", "31", "35.2", "33.0"} {
+		temperatureNode := results[i].Get("data.data.temperature")
+		if temperature, ok := temperatureNode.(jsonnode.Number); ok {
+			if temperature.String() != expectedTemperature {
+				t.Errorf("Element %d had unexpected temperature value: %s", i, temperature)
+			}
+		} else {
+			t.Errorf("Unexpected type for element %d temperature. type: %v", i, reflect.TypeOf(temperatureNode))
+		}
 	}
-	if b == 9223372036854775806 {
-		t.Error("We don't expect a float64 to be able to represent the maximum int64 value - 1")
-	}
-}
-
-func TestParsingJsonNumbersAsNumbersGood(t *testing.T) {
-	jsonString := `
-{
-  "a": 9223372036854775807,
-  "b": 9223372036854775806.0
-}
-`
-	jsonObject := map[string]interface{}{}
-
-	d := json.NewDecoder(bytes.NewBufferString(jsonString))
-	d.UseNumber()
-	err := d.Decode(&jsonObject)
-	if err != nil {
-		t.Error(err)
-	}
-	a, aExists := jsonObject["a"]
-	b, bExists := jsonObject["b"]
-	if !aExists || !bExists {
-		t.Fatal("something does not exist")
-	}
-	//t.Log(fmt.Sprintf("Values of a: %d , b: %d", a, b))
-	//t.Log(fmt.Sprintf("Types of a: %v , b: %v", reflect.TypeOf(a), reflect.TypeOf(b)))
-
-	if a != json.Number("9223372036854775807") {
-		t.Error("We expect a to be represented precisely")
-	}
-	if b != json.Number("9223372036854775806.0") {
-		t.Error("We expect b to be represented precisely")
-	}
-}
-func TestParsingJsonArrayGivesArrayOfAny(t *testing.T) {
-	jsonString := `
-[
-  51,
-  32
-]
-`
-	var jsonArray interface{}
-
-	err := json.Unmarshal([]byte(jsonString), &jsonArray)
-	if err != nil {
-		t.Error(err)
-	}
-	if reflect.TypeOf(jsonArray) != reflect.TypeOf([]interface{}{}) {
-		t.Error("We expect an array to be deserialized as []interface{}")
-	}
+	//resultsArray := jsonnode.NewArray()
+	//for _, result := range results {
+	//	resultsArray.Add(result)
+	//}
+	//println(string(resultsArray.Serialize()))
 }
