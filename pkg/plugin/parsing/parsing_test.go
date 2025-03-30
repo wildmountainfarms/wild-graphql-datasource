@@ -56,18 +56,22 @@ func TestExplodeArrayWhenGivenArrayOfArrays(t *testing.T) {
 	if len(results) != 3 {
 		t.Fatalf("len(results) is unexpected! its value is: %d", len(results))
 	}
-	for i, expectedResult := range []jsonnode.Number{
-		jsonnode.Number("1"),
-		jsonnode.Number("55"),
-		jsonnode.Number("99"),
+
+	for i, expectedResultValues := range [][]jsonnode.Number{
+		{jsonnode.Number("1"), jsonnode.Number("3")},
+		{jsonnode.Number("55"), jsonnode.Number("56")},
+		{jsonnode.Number("99"), jsonnode.Number("100")},
 	} {
-		if value, ok := results[i].Get("value").(jsonnode.Number); ok {
-			if value != expectedResult {
-				t.Errorf("Unexpected value on object %d! Got %s but expected %s", i, value, expectedResult)
+		for j, expectedResultValue := range expectedResultValues {
+			if value, ok := results[i].Get(fmt.Sprintf("value._.%d", j)).(jsonnode.Number); ok {
+				if value != expectedResultValue {
+					t.Errorf("Unexpected value on %d . %d! Got %s but expected %s", i, j, value, expectedResultValue)
+				}
+			} else {
+				t.Errorf("value %d . %d is not numeric!", i, j)
 			}
-		} else {
-			t.Errorf("object %d from results does not have a numeric value in its value field!", i)
 		}
+		//println(string(results[i].Serialize()))
 	}
 }
 
