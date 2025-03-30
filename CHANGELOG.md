@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.4.0
+
+The big feature in this release is exploded array paths, which allows nested arrays within responses to be "exploded" into multiple rows.
+
+* Feature: [#6](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/6) support for exploded array paths which allow nested arrays to be turned into multiple rows instead of multiple columns
+* Fixed: [#15](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/15) data paths can now index into arrays.
+
 ## 1.3.1
 
 Fixed [#9](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/9)

@@ -20,6 +20,7 @@ Please report issues on our issues page: [wild-graphql-datasource/issues](https:
 * Multiple parsing options are supported allowing for a single GraphQL query to return many different data points with different formats.
   * Each parsing option has its own labels, which can be populated by a field in the response. These labels are used to group the response into different data frames.
   * Labels can be used to change the display name by using `${__field.labels["displayName"]}` under Standard options > Display name.
+* Exploded array paths are supported, allowing nested arrays to result in multiple rows, rather than multiple columns.
 * This is a backend plugin, so alerting is supported
 * [Annotation support](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
 
@@ -168,6 +169,68 @@ query ($from: Long!, $to: Long!) {
 
 Notice that time path is relative to the data path.
 
+### Exploded Array Paths (Advanced)
+
+This is a more advanced feature of the plugin.
+If you have a response such as this:
+
+```json
+{
+  "myData": {
+    "serverName": "Central Server 1",
+    "datapoints": [
+      {
+        "dateMillis": 1234,
+        "value": 23.2
+      },
+      {
+        "dateMillis": 1235,
+        "value": 23.3
+      }
+    ]
+  }
+}
+```
+
+You would not want to set `myData.datapoints` as the data path because then you would not have access to the `serverName` field.
+Instead, you can set the data path to `myData` and add `datapoints` as an exploded array path.
+
+A more advanced example is shown in this response:
+
+```json5
+{
+  "myData": {
+    "serverName": "Central Server 1",
+    "datapoints": [
+      {
+        "dateMillis": 1234,
+        "processorTemperatures": [
+          {
+            "id": "0",
+            "temperatureCelsius": 44.3
+          },
+          {
+            "id": "1",
+            "temperatureCelsius": 44.0
+          }
+        ]
+      },
+      // ...
+    ]
+  }
+}
+```
+
+In the above case, you can configure:
+
+* data path: `myData`
+* Exploded array paths
+  * `datapoints.processorTemperatures`
+
+Note that the `datapoints.processorTemperatures` exploded array path will also explode the `datapoints` array,
+so you don't need to also define `datapoints` as an exploded array path.
+
+
 ### Labels
 
 Each query option may specify labels that will be present in the resulting dataframe.
@@ -250,6 +313,48 @@ References:
 
 Remember that Grafana transformations are not the preferred way of doing this, and you should prefer to use the label functionality provided.
 
+---
+
+## Other information
+
+### Flattened data
+
+Unless exploded array paths are configured, arrays nested within the data path are flattened.
+
+Take this GraphQL response for example:
+
+```json
+{
+  "myData": [
+    {
+      "dateMillis": 1234,
+      "values": [
+        {
+          "name": "temperature",
+          "value": 23.0
+        },
+        {
+          "name": "humidity",
+          "value": 0.55
+        }
+      ]
+    }
+  ]
+}
+```
+
+In this case we would set `myData` as the data path, and the result we would get back would contain these field names:
+* `dateMillis`
+* `values.0.name`
+* `values.0.value`
+* `values.1.name`
+* `values.1.value`
+
+With this flattened data, you could refer to the temperature using the `values.0.value` path.
+Flattened data is not always easy to work with.
+Depending on what the data represents, you can also look into "exploded array paths", which are described above.
+
+You can use the `array.<index>` syntax within data paths and within label field values.
 
 ### Datasource Provisioning
 
