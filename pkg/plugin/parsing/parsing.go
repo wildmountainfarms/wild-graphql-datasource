@@ -9,6 +9,7 @@ import (
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -29,26 +30,46 @@ func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) 
 	}
 	split := strings.Split(dataPath, ".")
 
-	var currentData *jsonnode.Object = graphQlResponseData
-	for _, part := range split[:len(split)-1] {
-		newData := currentData.Get(part)
+	var currentData jsonnode.Node = graphQlResponseData
+	for i, part := range split {
+		var newData jsonnode.Node
+		switch typedCurrentData := currentData.(type) {
+		case *jsonnode.Object:
+			newData = typedCurrentData.Get(part)
+			if newData == nil {
+				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %s does not exist! dataPath: %s", i, part, dataPath))
+			}
+		case *jsonnode.Array:
+			partAsInteger, err := strconv.Atoi(part)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %s should be an integer because the value before it was an array! dataPath: %s", i, part, dataPath))
+			}
+			if partAsInteger < 0 {
+				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %d should be a non-negative integer! dataPath: %s", i, partAsInteger, dataPath))
+			}
+			if partAsInteger >= len(*typedCurrentData) {
+				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %d must not fall out of bounds for array of length %d! dataPath: %s", i, partAsInteger, len(*typedCurrentData), dataPath))
+			}
+			newData = (*typedCurrentData)[partAsInteger]
+			if newData == nil {
+				return nil, errors.New(fmt.Sprintf("(Internal error) Part (index %d) of data path resulted in retrieving nil (this should never happen)! dataPath: %s", i, dataPath))
+			}
+		default:
+			return nil, errors.New(fmt.Sprintf("(Internal error) Part (index %d) of data path resulted in unexpected currentData type! dataPath: %s, currentData type: %v", i, dataPath, reflect.TypeOf(currentData)))
+		}
 		if newData == nil {
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s does not exist! dataPath: %s", part, dataPath))
+			// We check whether newData is nil above, so this is just a sanity check and can never possibly occur
+			panic(errors.New("newData is nil. This will never happen unless this function was incorrectly changed"))
 		}
 		switch value := newData.(type) {
 		case *jsonnode.Object:
-			currentData = value
+		case *jsonnode.Array:
 		default:
-			// TODO if we come across an array, we should be able to index into it using the .<number> notation, like we do with fields
-			return nil, errors.New(fmt.Sprintf("Part of data path: %s is not a nested object! Type is %v! dataPath: %s", part, reflect.TypeOf(value), dataPath))
+			return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %s is not an object or array! Type is %v! dataPath: %s", i, part, reflect.TypeOf(value), dataPath))
 		}
+		currentData = newData
 	}
-	// after this for loop, currentData should be an array or an object if everything is going well
-	finalData := currentData.Get(split[len(split)-1])
-	if finalData == nil {
-		return nil, errors.New(fmt.Sprintf("Final part of data path: %s does not exist! dataPath: %s", split[len(split)-1], dataPath))
-	}
-	return finalData, nil
+	return currentData, nil
 }
 
 func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {

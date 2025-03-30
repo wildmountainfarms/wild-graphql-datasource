@@ -18,10 +18,22 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 4,
+      "panels": [],
+      "title": "Basic Queries",
+      "type": "row"
+    },
     {
       "datasource": {
         "type": "retrodaredevil-wildgraphql-datasource",
@@ -61,7 +73,7 @@
         "h": 13,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 1
       },
       "id": 1,
       "options": {
@@ -158,7 +170,7 @@
         "h": 13,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 1
       },
       "id": 2,
       "options": {
@@ -260,7 +272,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 14
       },
       "id": 3,
       "options": {
@@ -285,9 +297,7 @@
             {
               "dataPath": "generateDummyTimeseries",
               "explodeArrayPaths": [
-                "nodeData.datapoints.processorTemperatures",
-                "nodeData.datapoints",
-                "nodeData"
+                "nodeData.datapoints.processorTemperatures"
               ],
               "timeFields": [
                 {
@@ -314,6 +324,528 @@
         }
       ],
       "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "Specifically this tests whether specifying data paths containing arrays and indexing into them works.\n\nBecause this is the first node only, we expect the temperatures between the processors to all be pretty similar.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"nodeName\"]} - ${__field.labels[\"datapoints.processorTemperatures.processor\"]}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 11,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries.nodeData.0",
+              "explodeArrayPaths": [
+                "datapoints.processorTemperatures"
+              ],
+              "timeFields": [
+                {
+                  "timePath": "datapoints.dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Generated Processor Temperatures (first node only)",
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "nodeName",
+              "datapoints.processorTemperatures.processor"
+            ]
+          }
+        }
+      ],
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "id": 5,
+      "panels": [],
+      "title": "Queries that should result in errors",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "In this query we set the data path to point to an element that is not an object or an array. We expect an error to occur",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 8,
+        "x": 0,
+        "y": 23
+      },
+      "id": 6,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries.serverName",
+              "explodeArrayPaths": [],
+              "timeFields": []
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Expect error \"serverName is not an object or array\"",
+      "transformations": [],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "In this query we set the data path to point to an array, and incorrectly attempt to use \"a\" to index into that array, causing an integer parsing error.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 8,
+        "x": 8,
+        "y": 23
+      },
+      "id": 8,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries.nodeData.a",
+              "explodeArrayPaths": [],
+              "timeFields": []
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Expect error \"should be an integer\"",
+      "transformations": [],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "In this query we set the data path to something that does not exist.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 8,
+        "x": 0,
+        "y": 25
+      },
+      "id": 7,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "doesNotExist",
+              "explodeArrayPaths": [],
+              "timeFields": []
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Expect error \"doesNotExist does not exist\"",
+      "transformations": [],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "In this query we set the data path to point to an array, and incorrect index using a negative integer",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 8,
+        "x": 8,
+        "y": 25
+      },
+      "id": 9,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries.nodeData.-1",
+              "explodeArrayPaths": [],
+              "timeFields": []
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Expect error \"should be non-negative integer\"",
+      "transformations": [],
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "In this query we set the data path to point to an array, and incorrectly index that array using a value we expect to be out of bounds",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 2,
+        "w": 8,
+        "x": 8,
+        "y": 27
+      },
+      "id": 10,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries.nodeData.2",
+              "explodeArrayPaths": [],
+              "timeFields": []
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Expect error \"must not fall out of bounds\"",
+      "transformations": [],
+      "type": "table"
     }
   ],
   "refresh": "",
@@ -330,6 +862,6 @@
   "timezone": "",
   "title": "GraphQL Echo Dashboard",
   "uid": "df8c5904-af34-4555-96ea-d31359396b10",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
