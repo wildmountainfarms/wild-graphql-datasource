@@ -86,12 +86,11 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 	//   This error is never expected to occur because a correct GraphQL response should never have a particular field be of different types
 	fm := framemap.New()
 
-	for _, dataElement := range dataArray {
-		//theFlatData := jsonnode.NewObject()
-		//flattenData(dataElement, "", theFlatData)
-		flatDataExplodedArray := flattenOrExplode(dataElement, "", parsingOption.ExplodeArrayPaths)
+	expandedExplodeArrayPaths := expandPathsToSubPaths(parsingOption.ExplodeArrayPaths)
 
-		//for _, flatData := range []*jsonnode.Object{theFlatData} {
+	for _, dataElement := range dataArray {
+		flatDataExplodedArray := flattenAndExplode(dataElement, "", expandedExplodeArrayPaths)
+
 		for _, flatData := range flatDataExplodedArray {
 			labels, err := getLabelsFromFlatData(flatData, parsingOption)
 			if err != nil {
@@ -234,7 +233,6 @@ func flattenData(originalData *jsonnode.Object, prefix string, flattenedData *js
 
 func crossObjects(a []*jsonnode.Object, b []*jsonnode.Object) []*jsonnode.Object {
 	slice := make([]*jsonnode.Object, len(a)*len(b))
-	// TODO the ordering here determines the order of stuff in the dataframes. Consider making sure this is what we want
 	for i, bObject := range b {
 		for j, aObject := range a {
 			newObject := jsonnode.NewObject()
@@ -252,12 +250,22 @@ func explodeArray(data []*jsonnode.Object, nestedArrayFullKey string, explodeDat
 		for _, dataObject := range data {
 			switch typedValue := nestedArrayElement.(type) {
 			case *jsonnode.Object:
-				result := flattenOrExplode(typedValue, nestedArrayFullKey+".", explodeDataPaths)
+				result := flattenAndExplode(typedValue, nestedArrayFullKey+".", explodeDataPaths)
 				resultCrossed := crossObjects([]*jsonnode.Object{dataObject}, result)
 				r = append(r, resultCrossed...)
 			case *jsonnode.Array:
-				// TODO an array nested within an array? Is that allowed?
-				panic("TODO. This is not supported! an array within an array?? This probably isn't too bad to implement, but I don't feel like it rn")
+				innerArrayFullKey := nestedArrayFullKey + "._" // The "._" suffix is something we made up
+				if slices.Contains(explodeDataPaths, innerArrayFullKey) {
+					result := explodeArray([]*jsonnode.Object{jsonnode.NewObject()}, innerArrayFullKey, explodeDataPaths, typedValue)
+					resultCrossed := crossObjects([]*jsonnode.Object{dataObject}, result)
+					r = append(r, resultCrossed...)
+				} else {
+					flattenedData := jsonnode.NewObject()
+					flattenArray(typedValue, innerArrayFullKey+".", flattenedData)
+					newObject := dataObject.Clone()
+					newObject.PutFrom(flattenedData)
+					r = append(r, newObject)
+				}
 			default:
 				newObject := dataObject.Clone()
 				newObject.Put(nestedArrayFullKey, typedValue)
@@ -268,7 +276,31 @@ func explodeArray(data []*jsonnode.Object, nestedArrayFullKey string, explodeDat
 	return r
 }
 
-func flattenOrExplode(data *jsonnode.Object, prefix string, explodeDataPaths []string) []*jsonnode.Object {
+func expandPathsToSubPaths(paths []string) []string {
+	var r []string = nil
+	for _, path := range paths {
+		r = append(r, path)
+		var subPath = path
+		for {
+			lastIndex := strings.LastIndex(subPath, ".")
+			if lastIndex < 0 {
+				break
+			}
+			subPath = subPath[:lastIndex]
+			r = append(r, subPath)
+		}
+		strings.Split(path, ".")
+	}
+	return r
+}
+
+// flattenAndExplode will recursively flatten data and explode nested arrays if their path is contained within the explodeDataPaths argument.
+//
+// data is the source object to flatten.
+// prefix is used to prefix the field names on each returned jsonnode.Object.
+// explodeDataPaths is an array of data paths that point to a nested array.
+// It is recommended to manually expand all paths into their subpaths as well, as this function does not check that super-paths are contained within explodeDataPaths.
+func flattenAndExplode(data *jsonnode.Object, prefix string, explodeDataPaths []string) []*jsonnode.Object {
 	var r = []*jsonnode.Object{
 		jsonnode.NewObject(),
 	}
@@ -277,14 +309,17 @@ func flattenOrExplode(data *jsonnode.Object, prefix string, explodeDataPaths []s
 		fullKey := prefix + key
 		switch typedValue := value.(type) {
 		case *jsonnode.Object:
-			nestedDataArray := flattenOrExplode(typedValue, fullKey+".", explodeDataPaths)
+			nestedDataArray := flattenAndExplode(typedValue, fullKey+".", explodeDataPaths)
 			r = crossObjects(r, nestedDataArray)
 		case *jsonnode.Array:
 			if slices.Contains(explodeDataPaths, fullKey) {
+				// Note that if value is an empty array, explodeArray() will return an empty array
+				//   This could cause confusion when someone gets back an empty or mostly empty dataframe,
+				//   but this is intended behavior.
 				r = explodeArray(r, fullKey, explodeDataPaths, typedValue)
 			} else {
 				flattenedData := jsonnode.NewObject()
-				flattenArray(typedValue, prefix+key+".", flattenedData)
+				flattenArray(typedValue, fullKey+".", flattenedData)
 				for _, object := range r {
 					object.PutFrom(flattenedData)
 				}
