@@ -67,6 +67,7 @@ func (d *Datasource) Dispose() {
 func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	response := backend.NewQueryDataResponse()
 
+	// TODO allow concurrent: https://grafana.com/developers/plugin-tools/tutorials/build-a-data-source-backend-plugin#run-multiple-queries-concurrently
 	// We are currently not implementing any sort of batching strategy.
 	//   First off, not every GraphQL server supports batching
 	//   More info here: https://github.com/graphql/graphql-spec/issues/375 and also here: https://github.com/graphql/graphql-spec/issues/583#issuecomment-491807207
@@ -169,6 +170,13 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 			Status: status,
 		}, nil
 	}
+	if graphQLResponse.Data == nil {
+		// We don't expect data to be null in the response if there were no errors, so this should never happen
+		return &backend.DataResponse{
+			Error:  errors.New("GraphQL response had data=null"),
+			Status: status,
+		}, nil
+	}
 	if resp.StatusCode != 200 {
 		return &backend.DataResponse{
 			Error:  errors.New("got non-200 status: " + resp.Status),
@@ -181,7 +189,7 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 	// add the frames to the response.
 	for _, parsingOption := range qm.ParsingOptions {
 		frames, err, errorType := parsing.ParseData(
-			&graphQLResponse.Data,
+			graphQLResponse.Data,
 			parsingOption,
 		)
 		if err != nil {

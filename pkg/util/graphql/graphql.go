@@ -38,8 +38,8 @@ func (request *Request) ToRequest(ctx context.Context, url string) (*http.Reques
 
 type Response struct {
 	// We use a jsonnode.Object here because it maintains the order of the keys in a JSON object
-	Data   jsonnode.Object `json:"data"`
-	Errors []Error         `json:"errors"`
+	Data   *jsonnode.Object `json:"data"`
+	Errors []Error          `json:"errors"`
 }
 
 type Error struct {

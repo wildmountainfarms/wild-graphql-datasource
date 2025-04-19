@@ -1,5 +1,5 @@
 import React, {ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef} from 'react';
-import {Button, Checkbox, IconButton, InlineField, Input, Select, TextArea} from '@grafana/ui';
+import {Button, Checkbox, Combobox, IconButton, InlineField, Input, TextArea} from '@grafana/ui';
 import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
 import {
@@ -570,7 +570,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
                     tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
                     labelWidth={LABEL_WIDTH}
                   >
-                    <Select
+                    <Combobox
                       width={16}
                       options={[
                         {label: "Constant", value: LabelOptionType.CONSTANT},
@@ -604,7 +604,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
 
                   {fieldConfig &&
                     <InlineField label="If absent" labelWidth={10}>
-                      <Select
+                      <Combobox
                         width={16}
                         options={[
                           {label: "Error", value: "required"},

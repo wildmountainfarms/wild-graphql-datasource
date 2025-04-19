@@ -101,7 +101,7 @@
               "timeFields": []
             }
           ],
-          "queryText": "query {\n  echoHttpHeaders {\n  \thost:expectHeader(name:\"host\")\n    userAgent:expectHeader(name:\"user-agent\")\n    contentType:expectHeader(name:\"Content-Type\")\n    contentLength:expectHeader(name:\"content-length\")\n    accept:expectHeader(name:\"accept\")\n    acceptEncoding:expectHeader(name:\"accept-encoding\")\n    \n    datasourceUid:expectHeader(name:\"x-datasource-uid\")\n    panelId:expectHeader(name:\"x-panel-id\")\n  }\n}\n",
+          "queryText": "query {\n  echoHttpHeaders {\n  \thost:expectHeader(name:\"host\")\n    userAgent:expectHeader(name:\"user-agent\")\n    contentType:expectHeader(name:\"Content-Type\")\n    contentLength:expectHeader(name:\"content-length\")\n    accept:expectHeader(name:\"accept\")\n    acceptEncoding:expectHeader(name:\"accept-encoding\")\n    \n    # These headers are not present on Grafana 9.3.X\n    datasourceUid:getHeader(name:\"x-datasource-uid\")\n    panelId:getHeader(name:\"x-panel-id\")\n  }\n}\n",
           "refId": "A"
         }
       ],
