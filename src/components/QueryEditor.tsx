@@ -1,5 +1,5 @@
 import React, {ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef} from 'react';
-import {Button, Checkbox, Combobox, IconButton, InlineField, Input, TextArea} from '@grafana/ui';
+import {Button, Checkbox, IconButton, InlineField, Input, Select, TextArea} from '@grafana/ui';
 import {CoreApp, QueryEditorProps} from '@grafana/data';
 import {DataSource} from '../datasource';
 import {
@@ -192,6 +192,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
           };
         }
 
+        //
         if (itemIndex >= currentArray.length) {
           return {
             ...parsingOption,
@@ -391,6 +392,8 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
     <>
       <h3 className="page-heading">Query</h3>
       <div className="gf-form-group">
+        {/*When we attempt to debug the Combobox error, this line reproduces it*/}
+        {/*<Combobox options={[{label: "lol1", value: "lol1"}, {label: "lol2", value: "lol2"}]} onChange={newValue => {}} width={"auto"} minWidth={10}/>*/}
         <div className="gf-form" style={{height: "450px"}}>
           {/*TODO allow this to be resized*/}
           <GraphiQLInterface
@@ -570,7 +573,8 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
                     tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
                     labelWidth={LABEL_WIDTH}
                   >
-                    <Combobox
+                    {/* TODO use Combobox here https://developers.grafana.com/ui/latest/index.html?path=/docs/forms-combobox--docs*/}
+                    <Select
                       width={16}
                       options={[
                         {label: "Constant", value: LabelOptionType.CONSTANT},
@@ -604,7 +608,7 @@ function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Prop
 
                   {fieldConfig &&
                     <InlineField label="If absent" labelWidth={10}>
-                      <Combobox
+                      <Select
                         width={16}
                         options={[
                           {label: "Error", value: "required"},

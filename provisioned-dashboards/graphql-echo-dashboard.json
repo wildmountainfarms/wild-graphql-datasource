@@ -310,7 +310,7 @@
           "refId": "A"
         }
       ],
-      "title": "Generated Processor Temperatures",
+      "title": "Generated Processor Temperatures (Uses \"Partition by values\" transform)",
       "transformations": [
         {
           "id": "partitionByValues",
@@ -430,7 +430,7 @@
           "refId": "A"
         }
       ],
-      "title": "Generated Processor Temperatures (first node only)",
+      "title": "Generated Processor Temperatures (Uses \"Partition by values\" transform) (first node only)",
       "transformations": [
         {
           "id": "partitionByValues",
@@ -862,6 +862,6 @@
   "timezone": "",
   "title": "GraphQL Echo Dashboard",
   "uid": "df8c5904-af34-4555-96ea-d31359396b10",
-  "version": 2,
+  "version": 1,
   "weekStart": ""
 }

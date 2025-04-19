@@ -26,7 +26,7 @@ allow_loading_unsigned_plugins = retrodaredevil-wildgraphql-datasource
 
 ## Building and Development
 
-### Setup your system
+### Set up your system
 
 * Web requirements
   * Install nvm https://github.com/nvm-sh/nvm#installing-and-updating
@@ -98,6 +98,12 @@ And in another shell:
 # Note that build:debug is used here to allow debugging
 mage -v build:debug && npm run server
 # Kill and restart this as necessary
+```
+
+To test a different version of Grafana, simply use something like this:
+
+```shell
+mage -v build:debug && GRAFANA_VERSION=9.3.16-ubuntu npm run server
 ```
 
 
