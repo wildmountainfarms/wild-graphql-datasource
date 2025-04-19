@@ -211,6 +211,7 @@
         "type": "retrodaredevil-wildgraphql-datasource",
         "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
       },
+      "description": "Note: The labels do not appear correctly on Grafana 9.3",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -330,7 +331,7 @@
         "type": "retrodaredevil-wildgraphql-datasource",
         "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
       },
-      "description": "Specifically this tests whether specifying data paths containing arrays and indexing into them works.\n\nBecause this is the first node only, we expect the temperatures between the processors to all be pretty similar.",
+      "description": "Note: The labels do not appear correctly on Grafana 9.3\n\nThis tests whether specifying data paths containing arrays and indexing into them works.\n\nBecause this is the first node only, we expect the temperatures between the processors to all be pretty similar.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -445,12 +446,150 @@
       "type": "timeseries"
     },
     {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "Same as the above graph, except it uses Wild GraphQL labels.\n\nNOTE: Until a future update to Wild GraphQL Datasource, you can expect that the processor field appears as a datapoint",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"server\"]} - ${__field.labels[\"node\"]} - ${__field.labels[\"processor\"]}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries",
+              "explodeArrayPaths": [
+                "nodeData.datapoints.processorTemperatures"
+              ],
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "server",
+                  "type": "field",
+                  "value": "serverName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "node",
+                  "type": "field",
+                  "value": "nodeData.nodeName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "processor",
+                  "type": "field",
+                  "value": "nodeData.datapoints.processorTemperatures.processor"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "nodeData.datapoints.dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperatures {\n          processor\n          temperatureCelsius\n        }\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Generated Processor Temperatures (Uses Wild GraphQL labels) (expected to contain glitched datapoints)",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "id": 5,
       "panels": [],
@@ -498,7 +637,7 @@
         "h": 2,
         "w": 8,
         "x": 0,
-        "y": 23
+        "y": 31
       },
       "id": 6,
       "options": {
@@ -576,7 +715,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 23
+        "y": 31
       },
       "id": 8,
       "options": {
@@ -654,7 +793,7 @@
         "h": 2,
         "w": 8,
         "x": 0,
-        "y": 25
+        "y": 33
       },
       "id": 7,
       "options": {
@@ -732,7 +871,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 25
+        "y": 33
       },
       "id": 9,
       "options": {
@@ -810,7 +949,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 27
+        "y": 35
       },
       "id": 10,
       "options": {
