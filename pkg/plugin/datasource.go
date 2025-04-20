@@ -89,15 +89,6 @@ func (d *Datasource) QueryData(ctx context.Context, req *backend.QueryDataReques
 	return response, nil
 }
 
-func statusFromResponse(response http.Response) backend.Status {
-	for _, status := range []backend.Status{} {
-		if response.StatusCode == int(status) {
-			return status
-		}
-	}
-	return backend.StatusUnknown
-}
-
 // Executes a single GraphQL query.
 // In most error scenarios, the error should be nested within the DataResponse.
 // In some cases that are never expected to happen, error is returned and the DataResponse is nil.
@@ -148,13 +139,18 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 		}, nil
 	}
 	defer resp.Body.Close()
-	status := statusFromResponse(*resp)
+	if resp.StatusCode != 200 {
+		return &backend.DataResponse{
+			Error:  errors.New("got non-200 status: " + resp.Status),
+			Status: backend.StatusBadGateway,
+		}, nil
+	}
 
 	graphQLResponse, responseParseError := graphql.ParseGraphQLResponse(resp.Body)
 	if responseParseError != nil {
 		return &backend.DataResponse{
 			Error:  err,
-			Status: status,
+			Status: backend.StatusBadGateway,
 		}, nil
 	}
 	if len(graphQLResponse.Errors) > 0 {
@@ -167,20 +163,14 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 		}
 		return &backend.DataResponse{
 			Error:  errors.New(fmt.Sprintf("GraphQL response had %d error(s): %s", len(graphQLResponse.Errors), errorsString)),
-			Status: status,
+			Status: backend.StatusValidationFailed,
 		}, nil
 	}
 	if graphQLResponse.Data == nil {
 		// We don't expect data to be null in the response if there were no errors, so this should never happen
 		return &backend.DataResponse{
 			Error:  errors.New("GraphQL response had data=null"),
-			Status: status,
-		}, nil
-	}
-	if resp.StatusCode != 200 {
-		return &backend.DataResponse{
-			Error:  errors.New("got non-200 status: " + resp.Status),
-			Status: status,
+			Status: backend.StatusValidationFailed,
 		}, nil
 	}
 
@@ -196,7 +186,7 @@ func (d *Datasource) query(ctx context.Context, req *backend.QueryDataRequest, q
 			if errorType == parsing.FRIENDLY_ERROR {
 				return &backend.DataResponse{
 					Error:  err,
-					Status: status,
+					Status: backend.StatusValidationFailed,
 				}, nil
 			}
 			return nil, err
