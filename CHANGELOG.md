@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.1
+
+Some small fixes.
+
+* Handle against empty query object. This guards against a bug that occurs when a new panel is created, the query is sometimes empty, rather than the default query.
+* Correctly handle case when the `data` field of the GraphQL response is null
+* Better error handling in the backend.
+
 ## 1.4.0
 
 The big feature in this release is exploded array paths, which allows nested arrays within responses to be "exploded" into multiple rows.
