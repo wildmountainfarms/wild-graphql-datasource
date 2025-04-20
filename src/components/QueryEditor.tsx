@@ -33,6 +33,11 @@ import {getInterpolatedAutoPopulatedVariables, interpolateVariables} from "../va
 
 
 type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
+interface InnerQueryProps {
+  query: WildGraphQLAnyQuery
+  onChange: (value: WildGraphQLAnyQuery) => void,
+  app?: CoreApp
+}
 
 const LABEL_WIDTH = 24;
 const INPUT_WIDTH = 48;
@@ -99,6 +104,17 @@ export function QueryEditor(props: Props) {
     );
   }, [datasource.settings.url, datasource.settings.withCredentials, datasource.settings.basicAuth]);
 
+  // *sometimes* and only sometimes when creating a new panel the query won't be populated with the default query.
+  //   When that happens any assumption we make about the presence of fields of query, we get an NPE.
+  //   So although these default values aren't ideal,
+  //   we use them here because we don't need to replicate default query logic here, as if this happens it's for Grafana to fix
+  const correctedQuery: WildGraphQLAnyQuery = {
+    refId: "", // I don't think there's a documented case of refId not being present, but we'll guard against it anyway
+    queryText: "",
+    parsingOptions: [],
+    ...(query as Partial<WildGraphQLAnyQuery>), // cast to partial to make compiler point out missing fields
+  };
+
   return (
     <>
       {/*By not providing storage, history contexts, they won't be used*/}
@@ -107,7 +123,7 @@ export function QueryEditor(props: Props) {
       <EditorContextProvider
         // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
         defaultTabs={[{
-          query: query.queryText,
+          query: correctedQuery.queryText,
           // NOTE: For some reason if you specify variable here, it just doesn't work...
         }]}
         variables={getQueryVariablesAsJsonString(query)}
@@ -124,7 +140,9 @@ export function QueryEditor(props: Props) {
                 {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
                 <div className={isAlerting ? "hide-execute-button" : ""}>
                   <InnerQueryEditor
-                    {...props}
+                    query={correctedQuery}
+                    onChange={props.onChange}
+                    app={props.app}
                   />
                 </div>
               </PluginContextProvider>
@@ -136,7 +154,7 @@ export function QueryEditor(props: Props) {
   );
 }
 
-function InnerQueryEditor({ query, onChange, onRunQuery, datasource, app }: Props) {
+function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   const isBackendOnlyQuery = app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting;
   const editorContext = useEditorContext();
   const labelToAddRef = useRef<HTMLInputElement>(null);
