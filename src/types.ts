@@ -93,11 +93,13 @@ export interface WildGraphQLMainQuery extends WildGraphQLFrontendQuery {
 
 export interface WildGraphQLAnnotationQuery extends WildGraphQLFrontendQuery {
 }
+export interface WildGraphQLVariableQuery extends WildGraphQLFrontendQuery {
+}
 export interface WildGraphQLAlertingQuery extends WildGraphQLCommonQuery {
 }
 
 /** This type represents the possible options that can be stored in the datasource JSON for queries */
-export type WildGraphQLAnyQuery = (WildGraphQLMainQuery | WildGraphQLAnnotationQuery | WildGraphQLAlertingQuery) &
+export type WildGraphQLAnyQuery = (WildGraphQLMainQuery | WildGraphQLAnnotationQuery | WildGraphQLVariableQuery | WildGraphQLAlertingQuery) &
   Partial<WildGraphQLMainQuery> &
   Partial<WildGraphQLAnnotationQuery> &
   Partial<WildGraphQLAlertingQuery>;
@@ -116,7 +118,7 @@ export interface WildGraphQLSecureJsonData {
   // TODO We should support secret fields that can be passed to GraphQL queries as arguments
 }
 
-export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
+export const DEFAULT_QUERY: Omit<WildGraphQLMainQuery, 'refId'> = {
   queryText: `query ($from: String!, $to: String!) {
   queryStatus(from: $from, to: $to) {
     batteryVoltage {
@@ -136,7 +138,7 @@ export const DEFAULT_QUERY: Partial<WildGraphQLMainQuery> = {
   ]
 };
 
-export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLAlertingQuery> = {
+export const DEFAULT_ALERTING_QUERY: Omit<WildGraphQLAlertingQuery, 'refId'> = {
   queryText: `query ($from: String!, $to: String!) {
   queryStatus(sourceId: "default", from: $from, to: $to) {
     batteryVoltage {
@@ -156,7 +158,7 @@ export const DEFAULT_ALERTING_QUERY: Partial<WildGraphQLAlertingQuery> = {
   ]
 };
 
-export const DEFAULT_ANNOTATION_QUERY: Partial<WildGraphQLAnnotationQuery> = {
+export const DEFAULT_ANNOTATION_QUERY: Omit<WildGraphQLAnnotationQuery, 'refId'> = {
   queryText: `query ($from: String!, $to: String!) {
   queryEvent(from:$from, to:$to) {
     mateCommand {
@@ -172,6 +174,26 @@ export const DEFAULT_ANNOTATION_QUERY: Partial<WildGraphQLAnnotationQuery> = {
     {
       dataPath: "queryEvent.mateCommand",
       timeFields: [{ timePath: "dateMillis" }]
+    }
+  ]
+};
+
+// TODO better default query for variables
+export const DEFAULT_VARIABLE_QUERY: Omit<WildGraphQLVariableQuery, 'refId'> = {
+  queryText: `query ($from: String!, $to: String!) {
+  queryEvent(from:$from, to:$to) {
+    mateCommand {
+      dateMillis
+      packet {
+        commandName
+      }
+    }
+  }
+}
+`,
+  parsingOptions: [
+    {
+      dataPath: "queryEvent.mateCommand",
     }
   ]
 };

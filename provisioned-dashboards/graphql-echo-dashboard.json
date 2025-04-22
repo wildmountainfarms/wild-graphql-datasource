@@ -101,8 +101,9 @@
               "timeFields": []
             }
           ],
-          "queryText": "query {\n  echoHttpHeaders {\n  \thost:expectHeader(name:\"host\")\n    userAgent:expectHeader(name:\"user-agent\")\n    contentType:expectHeader(name:\"Content-Type\")\n    contentLength:expectHeader(name:\"content-length\")\n    accept:expectHeader(name:\"accept\")\n    acceptEncoding:expectHeader(name:\"accept-encoding\")\n    \n    # These headers are not present on Grafana 9.3.X\n    datasourceUid:getHeader(name:\"x-datasource-uid\")\n    panelId:getHeader(name:\"x-panel-id\")\n  }\n}\n",
-          "refId": "A"
+          "queryText": "query ($targetHeader: String!){\n  echoHttpHeaders {\n    targetHeader:getHeader(name:$targetHeader)\n    \n  \thost:expectHeader(name:\"host\")\n    userAgent:expectHeader(name:\"user-agent\")\n    contentType:expectHeader(name:\"Content-Type\")\n    contentLength:expectHeader(name:\"content-length\")\n    accept:expectHeader(name:\"accept\")\n    acceptEncoding:expectHeader(name:\"accept-encoding\")\n    \n    # These headers are not present on Grafana 9.3.X\n    datasourceUid:getHeader(name:\"x-datasource-uid\")\n    panelId:getHeader(name:\"x-panel-id\")\n  }\n}\n",
+          "refId": "A",
+          "variables": "{\n  \"targetHeader\": \"$targetHeader\"\n}"
         }
       ],
       "title": "Expected Headers",
@@ -494,8 +495,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1088,7 +1088,41 @@
   "schemaVersion": 39,
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {
+          "selected": false,
+          "text": "host",
+          "value": "host"
+        },
+        "datasource": {
+          "type": "retrodaredevil-wildgraphql-datasource",
+          "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+        },
+        "definition": "",
+        "description": "This header is used as a simple test for one of the queries to dynamically select a header to request the value of.",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Target Header",
+        "multi": false,
+        "name": "targetHeader",
+        "options": [],
+        "query": {
+          "parsingOptions": [
+            {
+              "dataPath": "echoHttpHeaders.entries"
+            }
+          ],
+          "queryText": "query {\n  echoHttpHeaders {\n    entries {\n      name\n    }\n  }\n}\n",
+          "refId": ""
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",
@@ -1098,6 +1132,6 @@
   "timezone": "",
   "title": "GraphQL Echo Dashboard",
   "uid": "df8c5904-af34-4555-96ea-d31359396b10",
-  "version": 2,
+  "version": 3,
   "weekStart": ""
 }

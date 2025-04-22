@@ -1,16 +1,33 @@
-import {AdHocVariableFilter, AnnotationSupport, CoreApp, DataSourceInstanceSettings, ScopedVars,} from '@grafana/data';
+import {
+  AdHocVariableFilter,
+  AnnotationSupport,
+  CoreApp,
+  DataSourceInstanceSettings,
+  DataSourceVariableSupport,
+  ScopedVars,
+  VariableSupportType,
+} from '@grafana/data';
 import {DataSourceWithBackend, getTemplateSrv} from '@grafana/runtime';
 
 import {
   DEFAULT_ALERTING_QUERY,
   DEFAULT_ANNOTATION_QUERY,
-  DEFAULT_QUERY,
+  DEFAULT_QUERY, DEFAULT_VARIABLE_QUERY,
   getQueryVariablesAsJson,
   WildGraphQLAnnotationQuery,
   WildGraphQLAnyQuery,
-  WildGraphQLDataSourceOptions,
+  WildGraphQLDataSourceOptions, WildGraphQLVariableQuery,
 } from './types';
 import {interpolateVariables} from "./variables";
+
+class WildGraphQLVariableSupport extends DataSourceVariableSupport<DataSource, WildGraphQLVariableQuery> {
+  getType(): VariableSupportType {
+    return VariableSupportType.Datasource;
+  }
+  getDefaultQuery(): Omit<WildGraphQLVariableQuery, 'refId'> {
+    return DEFAULT_VARIABLE_QUERY;
+  }
+}
 
 export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildGraphQLDataSourceOptions> {
   settings: DataSourceInstanceSettings<WildGraphQLDataSourceOptions>;
@@ -27,6 +44,7 @@ export class DataSource extends DataSourceWithBackend<WildGraphQLAnyQuery, WildG
         return DEFAULT_ANNOTATION_QUERY;
       }
     };
+    this.variables = new WildGraphQLVariableSupport();
   }
 
   getDefaultQuery(app: CoreApp): Partial<WildGraphQLAnyQuery> {
