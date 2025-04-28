@@ -72,6 +72,17 @@ func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) 
 	return currentData, nil
 }
 
+func removeElements[T comparable](source []T, removeAll []T) []T {
+	var r []T = nil
+	for _, element := range source {
+		// TODO consider if we want to improve performance here. Maybe removeAll should be a set or map?
+		if !slices.Contains(removeAll, element) {
+			r = append(r, element)
+		}
+	}
+	return r
+}
+
 func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {
 	finalData, err := getNodeFromDataPath(graphQlResponseData, parsingOption.DataPath)
 	if err != nil {
@@ -107,6 +118,8 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 	//   This error is never expected to occur because a correct GraphQL response should never have a particular field be of different types
 	fm := framemap.New()
 
+	fieldExcludedFromDataFrame := parsingOption.GetFieldsExcludedFromDataFrame()
+
 	expandedExplodeArrayPaths := expandPathsToSubPaths(parsingOption.ExplodeArrayPaths)
 
 	for _, dataElement := range dataArray {
@@ -117,10 +130,11 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			if err != nil {
 				return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
 			}
+			filteredKeys := removeElements(flatData.Keys(), fieldExcludedFromDataFrame)
 			row := fm.NewRow(labels)
-			row.FieldOrder = flatData.Keys()
+			row.FieldOrder = filteredKeys
 
-			for _, key := range flatData.Keys() {
+			for _, key := range filteredKeys {
 				value := flatData.Get(key)
 
 				timeField := parsingOption.GetTimeField(key)

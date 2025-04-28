@@ -22,6 +22,8 @@ export enum LabelOptionType {
 export interface LabelOptionFieldConfig {
   required: boolean;
   defaultValue?: string;
+  /** When true, this field should be excluded from the data frame. Note that undefined values are preferred over false values. (Both undefined and false represent the same thing) */
+  excludeFieldFromDataFrame?: boolean;
 }
 export const DEFAULT_LABEL_OPTION_FIELD_CONFIG: LabelOptionFieldConfig = { // omit is default
   required: false

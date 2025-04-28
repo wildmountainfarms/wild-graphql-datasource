@@ -39,8 +39,9 @@ type LabelOption struct {
 	FieldConfig *LabelOptionFieldConfig `json:"fieldConfig"`
 }
 type LabelOptionFieldConfig struct {
-	Required     bool    `json:"required"`
-	DefaultValue *string `json:"defaultValue"`
+	Required                  bool    `json:"required"`
+	DefaultValue              *string `json:"defaultValue"`
+	ExcludeFieldFromDataFrame *bool   `json:"excludeFieldFromDataFrame"`
 }
 
 func (parsingOption *ParsingOption) GetTimeField(key string) *TimeField {
@@ -50,4 +51,24 @@ func (parsingOption *ParsingOption) GetTimeField(key string) *TimeField {
 		}
 	}
 	return nil
+}
+
+// GetFieldsExcludedFromDataFrame returns all fields that should be excluded from the data frame.
+// The current implementation determines this by only looking at the label options,
+// but future changes to the behavior may change this.
+func (parsingOption *ParsingOption) GetFieldsExcludedFromDataFrame() []string {
+	// Note that we may consider returning a Set or map type in the future
+	var r []string = nil
+	for _, labelOption := range parsingOption.LabelOptions {
+		if labelOption.Type == FIELD {
+			fieldConfig := labelOption.FieldConfig
+			if fieldConfig != nil {
+				excludeFieldFromDataFrame := fieldConfig.ExcludeFieldFromDataFrame
+				if excludeFieldFromDataFrame != nil && *excludeFieldFromDataFrame {
+					r = append(r, labelOption.Value)
+				}
+			}
+		}
+	}
+	return r
 }

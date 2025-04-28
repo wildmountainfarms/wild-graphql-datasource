@@ -593,7 +593,7 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
                   >
                     {/* TODO use Combobox here https://developers.grafana.com/ui/latest/index.html?path=/docs/forms-combobox--docs*/}
                     <Select
-                      width={16}
+                      width={10}
                       options={[
                         {label: "Constant", value: LabelOptionType.CONSTANT},
                         {label: "Field", value: LabelOptionType.FIELD},
@@ -640,6 +640,7 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
                             setLabelOption(parsingOptionIndex, labelOptionIndex, {
                               ...labelOption,
                               fieldConfig: {
+                                ...(fieldConfig!),
                                 required: newValue === "required",
                                 defaultValue: newValue === "omit" ? undefined : (fieldConfig!.defaultValue ?? "")
                               }
@@ -658,14 +659,34 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
                           setLabelOption(parsingOptionIndex, labelOptionIndex, {
                             ...labelOption,
                             fieldConfig: {
+                              ...(fieldConfig!),
                               required: false,
                               defaultValue: event.currentTarget.value
                             }
-                          })
+                          });
                         }}
                       />
                     </InlineField>
                   }
+                  <InlineField
+                    label="Frame exclude"
+                    labelWidth={16}
+                    tooltip="When checked, this field will not be included in the data frame."
+                  >
+                    <Checkbox
+                      label=""
+                      value={fieldConfig!.excludeFieldFromDataFrame === true}
+                      onChange={(event) => {
+                        setLabelOption(parsingOptionIndex, labelOptionIndex, {
+                          ...labelOption,
+                          fieldConfig: {
+                            ...(fieldConfig!),
+                            excludeFieldFromDataFrame: event.currentTarget.checked || undefined // prefer using undefined rather than false value
+                          }
+                        })
+                      }}
+                    />
+                  </InlineField>
                   <IconButton
                     name={"minus"}
                     aria-label="Remove"
