@@ -1,5 +1,10 @@
 package querymodel
 
+import (
+	"github.com/emirpasic/gods/v2/sets"
+	"github.com/emirpasic/gods/v2/sets/hashset"
+)
+
 // QueryModel represents data sent from the frontend to perform a query
 type QueryModel struct {
 	QueryText string `json:"queryText"`
@@ -56,16 +61,16 @@ func (parsingOption *ParsingOption) GetTimeField(key string) *TimeField {
 // GetFieldsExcludedFromDataFrame returns all fields that should be excluded from the data frame.
 // The current implementation determines this by only looking at the label options,
 // but future changes to the behavior may change this.
-func (parsingOption *ParsingOption) GetFieldsExcludedFromDataFrame() []string {
+func (parsingOption *ParsingOption) GetFieldsExcludedFromDataFrame() sets.Set[string] {
 	// Note that we may consider returning a Set or map type in the future
-	var r []string = nil
+	r := hashset.New[string]()
 	for _, labelOption := range parsingOption.LabelOptions {
 		if labelOption.Type == FIELD {
 			fieldConfig := labelOption.FieldConfig
 			if fieldConfig != nil {
 				excludeFieldFromDataFrame := fieldConfig.ExcludeFieldFromDataFrame
 				if excludeFieldFromDataFrame != nil && *excludeFieldFromDataFrame {
-					r = append(r, labelOption.Value)
+					r.Add(labelOption.Value)
 				}
 			}
 		}

@@ -3,6 +3,7 @@ package parsing
 import (
 	"errors"
 	"fmt"
+	"github.com/emirpasic/gods/v2/sets"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/framemap"
 	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
@@ -72,12 +73,13 @@ func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) 
 	return currentData, nil
 }
 
-func removeElements[T comparable](source []T, removeAll []T) []T {
-	var r []T = nil
-	for _, element := range source {
-		// TODO consider if we want to improve performance here. Maybe removeAll should be a set or map?
-		if !slices.Contains(removeAll, element) {
-			r = append(r, element)
+// filterKeysForDataFrame filters keys out of the data frame. Most of the keys filtered out can still be used within labels.
+func filterKeysForDataFrame(keys []string, fieldsExcludedFromDataFrame sets.Set[string]) []string {
+	var r []string = nil
+	for _, key := range keys {
+		// The "#" feature is in beta -- basically if a key contains "#", it was created by this plugin itself, and should not be apart of the data frame
+		if !fieldsExcludedFromDataFrame.Contains(key) && !strings.Contains(key, "#") {
+			r = append(r, key)
 		}
 	}
 	return r
@@ -118,7 +120,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 	//   This error is never expected to occur because a correct GraphQL response should never have a particular field be of different types
 	fm := framemap.New()
 
-	fieldExcludedFromDataFrame := parsingOption.GetFieldsExcludedFromDataFrame()
+	fieldsExcludedFromDataFrame := parsingOption.GetFieldsExcludedFromDataFrame()
 
 	expandedExplodeArrayPaths := expandPathsToSubPaths(parsingOption.ExplodeArrayPaths)
 
@@ -130,7 +132,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			if err != nil {
 				return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
 			}
-			filteredKeys := removeElements(flatData.Keys(), fieldExcludedFromDataFrame)
+			filteredKeys := filterKeysForDataFrame(flatData.Keys(), fieldsExcludedFromDataFrame)
 			row := fm.NewRow(labels)
 			row.FieldOrder = filteredKeys
 
@@ -221,9 +223,6 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 				case jsonnode.String:
 					labels[labelOption.Name] = typedFieldValue.String()
 				case jsonnode.Number:
-					// TODO when we have a number that is a label, it will automatically be used by Grafana as a datapoint. Should we add logic to stop that from happening? (this todo comment isn't technically relevant to this specific area of the code)
-					//   A potential solution is that maybe we should have an option to remove a field if it is being used as a label
-
 					// TODO decide if we want to "normalize" when converting to string -- should 5.0 and 5 be the same string value?
 					labels[labelOption.Name] = typedFieldValue.String()
 				default:
@@ -281,7 +280,7 @@ func crossObjects(a []*jsonnode.Object, b []*jsonnode.Object) []*jsonnode.Object
 }
 func explodeArray(data []*jsonnode.Object, nestedArrayFullKey string, explodeDataPaths []string, nestedArray *jsonnode.Array) []*jsonnode.Object {
 	var r []*jsonnode.Object
-	for _, nestedArrayElement := range *nestedArray {
+	for index, nestedArrayElement := range *nestedArray {
 		for _, dataObject := range data {
 			switch typedValue := nestedArrayElement.(type) {
 			case *jsonnode.Object:
@@ -304,6 +303,10 @@ func explodeArray(data []*jsonnode.Object, nestedArrayFullKey string, explodeDat
 			default:
 				newObject := dataObject.Clone()
 				newObject.Put(nestedArrayFullKey, typedValue)
+				// Use jsonnode.String here because this will only ever be used as a label's value, which must be a string
+				// Note that this feature is in beta. Because the key includes "#" it will not be included in the data frame
+				// It might be worth adding some sort of setting in the future to enable/disable additional fields like this to be populated by this plugin
+				newObject.Put(nestedArrayFullKey+"#index", jsonnode.String(fmt.Sprintf("%d", index)))
 				r = append(r, newObject)
 			}
 		}

@@ -592,7 +592,147 @@
         "type": "retrodaredevil-wildgraphql-datasource",
         "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
       },
-      "description": "Same as the above graph, except it uses Wild GraphQL labels.\n\nNOTE: Until a future update to Wild GraphQL Datasource, you can expect that the processor field appears as a datapoint",
+      "description": "Similar to the other graphs, but the query itself returns an array of numbers representing the temperature in Celsius.\n\nThis tests exploding arrays of primitives and the beta feature of referencing a #index field within a label. Additionally, whether \"Frame exclude\" is checked should not affect whether the #index field is included in the data frame (#index fields and any field containing \"#\" will never be included in the data frame).",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "displayName": "${__field.labels[\"server\"]} - ${__field.labels[\"node\"]} - ${__field.labels[\"processor\"]}",
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "celsius",
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "generateDummyTimeseries",
+              "explodeArrayPaths": [
+                "nodeData.datapoints.processorTemperaturesCelsius"
+              ],
+              "labelOptions": [
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "excludeFieldFromDataFrame": true,
+                    "required": true
+                  },
+                  "name": "server",
+                  "type": "field",
+                  "value": "serverName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "excludeFieldFromDataFrame": true,
+                    "required": true
+                  },
+                  "name": "node",
+                  "type": "field",
+                  "value": "nodeData.nodeName"
+                },
+                {
+                  "fieldConfig": {
+                    "defaultValue": "",
+                    "required": true
+                  },
+                  "name": "processor",
+                  "type": "field",
+                  "value": "nodeData.datapoints.processorTemperaturesCelsius#index"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "nodeData.datapoints.dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: Long!, $to: Long!) {\n  generateDummyTimeseries(\n    from:$from,\n    to:$to,\n    nodeCount:2,\n    processorCount:4\n  ) {\n    serverName\n    nodeData {\n      nodeName\n      datapoints {\n        dateMillis\n        processorTemperaturesCelsius\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Generated Processor Temperatures (Uses Wild GraphQL labels) (Explode array of primitives, #index feature)",
+      "transformations": [],
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "description": "Same as the above graph, except it uses Wild GraphQL labels.\n\nThis version of the dashboard does not use the \"Frame exclude\" feature, and we therefore expect the node number to be included as a data point (which results in weird graph).",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1274,6 +1414,6 @@
   "timezone": "",
   "title": "GraphQL Echo Dashboard",
   "uid": "df8c5904-af34-4555-96ea-d31359396b10",
-  "version": 1,
+  "version": 3,
   "weekStart": ""
 }
