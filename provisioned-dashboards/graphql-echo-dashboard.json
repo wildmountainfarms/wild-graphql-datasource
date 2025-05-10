@@ -212,6 +212,98 @@
         "type": "retrodaredevil-wildgraphql-datasource",
         "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
       },
+      "description": "This tests exploding an array of primitives and displaying those primitives",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "id": 17,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "echoHttpHeaders",
+              "explodeArrayPaths": [
+                "headerNames"
+              ],
+              "timeFields": []
+            }
+          ],
+          "queryText": "query {\n  echoHttpHeaders {\n    headerNames\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Header names",
+      "transformations": [],
+      "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 16,
+      "panels": [],
+      "title": "Graphs",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
       "description": "Note: The labels do not appear correctly on Grafana 9.3",
       "fieldConfig": {
         "defaults": {
@@ -274,7 +366,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 28
       },
       "id": 3,
       "options": {
@@ -394,7 +486,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 28
       },
       "id": 11,
       "options": {
@@ -513,7 +605,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 22
+        "y": 36
       },
       "id": 14,
       "options": {
@@ -654,7 +746,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 22
+        "y": 36
       },
       "id": 15,
       "options": {
@@ -794,7 +886,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 30
+        "y": 44
       },
       "id": 12,
       "options": {
@@ -871,7 +963,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 38
+        "y": 52
       },
       "id": 5,
       "panels": [],
@@ -919,7 +1011,7 @@
         "h": 2,
         "w": 8,
         "x": 0,
-        "y": 39
+        "y": 53
       },
       "id": 6,
       "options": {
@@ -997,7 +1089,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 39
+        "y": 53
       },
       "id": 8,
       "options": {
@@ -1073,7 +1165,7 @@
         "h": 2,
         "w": 8,
         "x": 16,
-        "y": 39
+        "y": 53
       },
       "id": 13,
       "options": {
@@ -1172,7 +1264,7 @@
         "h": 2,
         "w": 8,
         "x": 0,
-        "y": 41
+        "y": 55
       },
       "id": 7,
       "options": {
@@ -1250,7 +1342,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 41
+        "y": 55
       },
       "id": 9,
       "options": {
@@ -1328,7 +1420,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 43
+        "y": 57
       },
       "id": 10,
       "options": {
@@ -1414,6 +1506,6 @@
   "timezone": "",
   "title": "GraphQL Echo Dashboard",
   "uid": "df8c5904-af34-4555-96ea-d31359396b10",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
