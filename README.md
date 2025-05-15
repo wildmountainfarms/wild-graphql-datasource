@@ -21,6 +21,7 @@ Please report issues on our issues page: [wild-graphql-datasource/issues](https:
   * Each parsing option has its own labels, which can be populated by a field in the response. These labels are used to group the response into different data frames.
   * Labels can be used to change the display name by using `${__field.labels["displayName"]}` under Standard options > Display name.
 * Exploded array paths are supported, allowing nested arrays to result in multiple rows, rather than multiple columns.
+* Variable values can be defined using a query
 * This is a backend plugin, so alerting is supported
 * [Annotation support](https://grafana.com/docs/grafana/latest/dashboards/build-dashboards/annotate-visualizations/)
 

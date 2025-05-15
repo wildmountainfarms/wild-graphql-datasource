@@ -22,12 +22,57 @@
   "liveNow": false,
   "panels": [
     {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 19,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# Wild GraphQL Data Source\n\nThis GraphQL Echo Dashboard contains queries using a Wild GraphQL Data Source that \nis configured to make queries to `${host}`.\n\nThe source code for the above line is:\n\n```\nThis GraphQL Echo Dashboard contains queries using a Wild GraphQL Data Source that \nis configured to make queries to `${theHostVariable}`.\n```\n\nThis demonstrates that you can use a GraphQL query as \na simple way to supply a variable to your dashboard that doesn't need to be shown.\nThe `host` variable is supplied by a variable query configured on this dashboard.\n\n## What is GraphQL Echo?\n\nThat `${host}` you see there is pointing at a [GraphQL Echo](https://github.com/retrodaredevil/graphql-echo) server.\nGraphQL Echo is just a simple webserver that has a GraphQL endpoint\nwith queries that are designed to make it easy to test features of this plugin.\n\n## Purpose of this dashboard\n\nThis dashboard contains many different queries. Some of these queries are very similar,\nbut exist to test different features of the plugin.\nSome of the queries are designed such that they should produce a specific error.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "queryStatus.batteryVoltage",
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
+            }
+          ],
+          "queryText": "query ($from: String!, $to: String!) {\n  queryStatus(from: $from, to: $to) {\n    batteryVoltage {\n      dateMillis\n      packet {\n        batteryVoltage\n      }\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Information",
+      "type": "text"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 13
       },
       "id": 4,
       "panels": [],
@@ -73,7 +118,7 @@
         "h": 13,
         "w": 12,
         "x": 0,
-        "y": 1
+        "y": 14
       },
       "id": 1,
       "options": {
@@ -101,9 +146,8 @@
               "timeFields": []
             }
           ],
-          "queryText": "query ($targetHeader: String!){\n  echoHttpHeaders {\n    targetHeader:getHeader(name:$targetHeader)\n    \n  \thost:expectHeader(name:\"host\")\n    userAgent:expectHeader(name:\"user-agent\")\n    contentType:expectHeader(name:\"Content-Type\")\n    contentLength:expectHeader(name:\"content-length\")\n    accept:expectHeader(name:\"accept\")\n    acceptEncoding:expectHeader(name:\"accept-encoding\")\n    \n    # These headers are not present on Grafana 9.3.X\n    datasourceUid:getHeader(name:\"x-datasource-uid\")\n    panelId:getHeader(name:\"x-panel-id\")\n  }\n}\n",
-          "refId": "A",
-          "variables": "{\n  \"targetHeader\": \"$targetHeader\"\n}"
+          "queryText": "query {\n  echoHttpHeaders {\n  \thost:expectHeader(name:\"host\")\n    userAgent:expectHeader(name:\"user-agent\")\n    contentType:expectHeader(name:\"Content-Type\")\n    contentLength:expectHeader(name:\"content-length\")\n    accept:expectHeader(name:\"accept\")\n    acceptEncoding:expectHeader(name:\"accept-encoding\")\n    \n    # These headers are not present on Grafana 9.3.X\n    datasourceUid:getHeader(name:\"x-datasource-uid\")\n    panelId:getHeader(name:\"x-panel-id\")\n  }\n}\n",
+          "refId": "A"
         }
       ],
       "title": "Expected Headers",
@@ -171,9 +215,9 @@
         "h": 13,
         "w": 12,
         "x": 12,
-        "y": 1
+        "y": 14
       },
-      "id": 2,
+      "id": 18,
       "options": {
         "cellHeight": "sm",
         "footer": {
@@ -195,16 +239,39 @@
           },
           "parsingOptions": [
             {
-              "dataPath": "echoHttpHeaders.entries",
+              "dataPath": "echoHttpHeaders",
               "timeFields": []
             }
           ],
-          "queryText": "query {\n  echoHttpHeaders {\n    entries {\n      name\n      values\n    }\n  }\n}\n",
-          "refId": "A"
+          "queryText": "query ($targetHeader1: String!, $targetHeader2: String!){\n  echoHttpHeaders {\n    targetHeader1:getHeader(name:$targetHeader1)\n    targetHeader2:getHeader(name:$targetHeader2)\n  }\n}\n",
+          "refId": "A",
+          "variables": "{\n  \"targetHeader1\": \"$targetHeader1\",\n  \"targetHeader2\": \"$targetHeader2\"\n}"
         }
       ],
-      "title": "All headers",
-      "transformations": [],
+      "title": "Dynamically Selected Headers",
+      "transformations": [
+        {
+          "id": "reduce",
+          "options": {
+            "labelsToFields": false,
+            "reducers": [
+              "firstNotNull"
+            ]
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Field": "Header",
+              "First *": "Value"
+            }
+          }
+        }
+      ],
       "type": "table"
     },
     {
@@ -247,7 +314,7 @@
         "h": 13,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 27
       },
       "id": 17,
       "options": {
@@ -287,12 +354,87 @@
       "type": "table"
     },
     {
+      "datasource": {
+        "type": "retrodaredevil-wildgraphql-datasource",
+        "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unitScale": true
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 12,
+        "x": 12,
+        "y": 27
+      },
+      "id": 2,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "10.3.3",
+      "targets": [
+        {
+          "datasource": {
+            "type": "retrodaredevil-wildgraphql-datasource",
+            "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+          },
+          "parsingOptions": [
+            {
+              "dataPath": "echoHttpHeaders.entries",
+              "timeFields": []
+            }
+          ],
+          "queryText": "query {\n  echoHttpHeaders {\n    entries {\n      name\n      values\n    }\n  }\n}\n",
+          "refId": "A"
+        }
+      ],
+      "title": "All headers",
+      "transformations": [],
+      "type": "table"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 40
       },
       "id": 16,
       "panels": [],
@@ -366,7 +508,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 28
+        "y": 41
       },
       "id": 3,
       "options": {
@@ -486,7 +628,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 28
+        "y": 41
       },
       "id": 11,
       "options": {
@@ -605,7 +747,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 36
+        "y": 49
       },
       "id": 14,
       "options": {
@@ -746,7 +888,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 36
+        "y": 49
       },
       "id": 15,
       "options": {
@@ -886,7 +1028,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 44
+        "y": 57
       },
       "id": 12,
       "options": {
@@ -963,7 +1105,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 52
+        "y": 65
       },
       "id": 5,
       "panels": [],
@@ -1011,7 +1153,7 @@
         "h": 2,
         "w": 8,
         "x": 0,
-        "y": 53
+        "y": 66
       },
       "id": 6,
       "options": {
@@ -1089,7 +1231,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 53
+        "y": 66
       },
       "id": 8,
       "options": {
@@ -1165,7 +1307,7 @@
         "h": 2,
         "w": 8,
         "x": 16,
-        "y": 53
+        "y": 66
       },
       "id": 13,
       "options": {
@@ -1264,7 +1406,7 @@
         "h": 2,
         "w": 8,
         "x": 0,
-        "y": 55
+        "y": 68
       },
       "id": 7,
       "options": {
@@ -1342,7 +1484,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 55
+        "y": 68
       },
       "id": 9,
       "options": {
@@ -1420,7 +1562,7 @@
         "h": 2,
         "w": 8,
         "x": 8,
-        "y": 57
+        "y": 70
       },
       "id": 10,
       "options": {
@@ -1465,21 +1607,21 @@
     "list": [
       {
         "current": {
-          "selected": false,
-          "text": "host",
-          "value": "host"
+          "selected": true,
+          "text": "user-agent",
+          "value": "user-agent"
         },
         "datasource": {
           "type": "retrodaredevil-wildgraphql-datasource",
           "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
         },
         "definition": "",
-        "description": "This header is used as a simple test for one of the queries to dynamically select a header to request the value of.",
+        "description": "This header is used as a simple test for one of the queries to dynamically select a header to request the value of.\n\nInternally this tests that an array of objects containing strings correctly populates the variable options.",
         "hide": 0,
         "includeAll": false,
-        "label": "Target Header",
+        "label": "Target Header 1",
         "multi": false,
-        "name": "targetHeader",
+        "name": "targetHeader1",
         "options": [],
         "query": {
           "parsingOptions": [
@@ -1488,6 +1630,72 @@
             }
           ],
           "queryText": "query {\n  echoHttpHeaders {\n    entries {\n      name\n    }\n  }\n}\n",
+          "refId": ""
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": true,
+          "text": "x-datasource-uid",
+          "value": "x-datasource-uid"
+        },
+        "datasource": {
+          "type": "retrodaredevil-wildgraphql-datasource",
+          "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+        },
+        "definition": "",
+        "description": "This header is used as a simple test for one of the queries to dynamically select a header to request the value of.\n\nInternally this tests that a query that produces an array of strings can correctly be used as the variable values.",
+        "hide": 0,
+        "includeAll": false,
+        "label": "Target Header 2",
+        "multi": false,
+        "name": "targetHeader2",
+        "options": [],
+        "query": {
+          "parsingOptions": [
+            {
+              "dataPath": "echoHttpHeaders.headerNames"
+            }
+          ],
+          "queryText": "query {\n  echoHttpHeaders {\n    headerNames\n  }\n}\n",
+          "refId": ""
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "graphql-echo:8080",
+          "value": "graphql-echo:8080"
+        },
+        "datasource": {
+          "type": "retrodaredevil-wildgraphql-datasource",
+          "uid": "a91208a2-644b-4177-aa96-08389eb61e32"
+        },
+        "definition": "",
+        "description": "This variable stores the host header and internally tests that when the data path points to a primitive, it is handled correctly and can be seen as a single value to a variable.",
+        "hide": 2,
+        "includeAll": false,
+        "label": "Host",
+        "multi": false,
+        "name": "host",
+        "options": [],
+        "query": {
+          "parsingOptions": [
+            {
+              "dataPath": "echoHttpHeaders.header"
+            }
+          ],
+          "queryText": "query {\n  echoHttpHeaders {\n    header:expectHeaderMulti(name:\"host\")\n  }\n}\n",
           "refId": ""
         },
         "refresh": 1,
@@ -1506,6 +1714,6 @@
   "timezone": "",
   "title": "GraphQL Echo Dashboard",
   "uid": "df8c5904-af34-4555-96ea-d31359396b10",
-  "version": 4,
+  "version": 1,
   "weekStart": ""
 }

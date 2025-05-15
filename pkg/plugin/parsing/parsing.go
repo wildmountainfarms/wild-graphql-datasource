@@ -99,8 +99,14 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			switch typedElement := element.(type) {
 			case *jsonnode.Object:
 				dataArray[i] = typedElement
+			case jsonnode.String, jsonnode.Number, jsonnode.Boolean, jsonnode.Null:
+				object := jsonnode.NewObject()
+				object.Put("value", element)
+				dataArray[i] = object
+			case *jsonnode.Array:
+				return nil, fmt.Errorf("one of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element)), FRIENDLY_ERROR
 			default:
-				return nil, errors.New(fmt.Sprintf("One of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element))), FRIENDLY_ERROR
+				return nil, fmt.Errorf("unknown type for element within array. element: %d is of type: %v", i, reflect.TypeOf(element)), UNKNOWN_ERROR
 			}
 		}
 	case *jsonnode.Object:
@@ -108,6 +114,13 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 		//   The only downside of this is that it makes configuration errors harder to diagnose.
 		dataArray = []*jsonnode.Object{
 			value,
+		}
+	case jsonnode.String, jsonnode.Number, jsonnode.Boolean, jsonnode.Null:
+		// Same concern here, this could make configuration errors harder to diagnose.
+		object := jsonnode.NewObject()
+		object.Put("value", value)
+		dataArray = []*jsonnode.Object{
+			object,
 		}
 	default:
 		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array or object! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))), FRIENDLY_ERROR
