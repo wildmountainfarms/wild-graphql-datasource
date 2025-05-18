@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.5.0
+
+* Feature: [#14](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/14) support for variable queries
+  * The data path can now point to a primitive, or an array of primitives. This is most useful for variable queries, but can also be used in other queries.
+* Feature: Frame exclusion - the option to configure labels to be excluded from the data frame. Especially useful if you are using numeric values for labels.
+* Beta feature: when exploding an array of primitives, you may refer to the index by using the `#index` suffix only within labels that reference fields.
+
 ## 1.4.1
 
 Some small fixes.
