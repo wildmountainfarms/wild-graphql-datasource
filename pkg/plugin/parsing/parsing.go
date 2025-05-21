@@ -3,16 +3,17 @@ package parsing
 import (
 	"errors"
 	"fmt"
-	"github.com/emirpasic/gods/v2/sets"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/framemap"
-	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
-	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 	"reflect"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/emirpasic/gods/v2/sets"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/parsing/framemap"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/plugin/querymodel"
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 )
 
 // the purpose of this file is to parse JSON data with configuration from a ParsingOption
@@ -24,6 +25,10 @@ const (
 	FRIENDLY_ERROR ParseDataErrorType = 1
 	UNKNOWN_ERROR  ParseDataErrorType = 2
 )
+
+// Supported date time formats.
+// Look at https://stackoverflow.com/questions/522251/whats-the-difference-between-iso-8601-and-rfc-3339-date-formats
+var supportedTimeFormats = []string{"2006-01-02T15:04:05Z", time.RFC3339, time.RFC3339Nano, time.DateTime}
 
 func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) (jsonnode.Node, error) {
 	if len(dataPath) == 0 {
@@ -151,33 +156,14 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 
 			for _, key := range filteredKeys {
 				value := flatData.Get(key)
-
 				timeField := parsingOption.GetTimeField(key)
+
 				if timeField != nil {
-					var timePointer *time.Time
-					switch typedValue := value.(type) {
-					case jsonnode.String:
-						// TODO allow user to customize time format
-						// Look at https://stackoverflow.com/questions/522251/whats-the-difference-between-iso-8601-and-rfc-3339-date-formats
-						//   and also consider using time.RFC339Nano instead
-						parsedTime, err := time.Parse(time.RFC3339, typedValue.String())
-						if err != nil {
-							return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
-						}
-						timePointer = &parsedTime
-					case jsonnode.Number:
-						epochMillis, err := typedValue.Int64()
-						if err != nil {
-							return nil, err, UNKNOWN_ERROR
-						}
-						t := time.UnixMilli(epochMillis)
-						timePointer = &t
-					case jsonnode.Null:
-						timePointer = nil
-					default:
-						// This case should never happen because we never expect other types to pop up here
-						return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
+					timePointer, err, errType := parseTimeField(value)
+					if err != nil {
+						return nil, err, errType
 					}
+
 					if timePointer == nil {
 						row.FieldMap[key] = jsonnode.NULL
 					} else {
@@ -212,6 +198,47 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 		return nil, err, UNKNOWN_ERROR
 	}
 	return frames, nil, NO_ERROR
+}
+
+// try to parse the time field with fallback formats
+func parseTimeField(value jsonnode.Node) (*time.Time, error, ParseDataErrorType) {
+	switch typedValue := value.(type) {
+	case jsonnode.String:
+		valueString := typedValue.String()
+
+		// try to decode number
+		// because big numbers are usually serialized to string in json
+		epochMillis, err := strconv.ParseInt(valueString, 0, 64)
+		if err == nil {
+			t := time.UnixMilli(epochMillis).UTC()
+
+			return &t, nil, 0
+		}
+
+		// TODO allow user to customize time format
+		for _, format := range supportedTimeFormats {
+			parsedTime, err := time.ParseInLocation(format, typedValue.String(), time.UTC)
+			if err == nil {
+				return &parsedTime, nil, 0
+			}
+		}
+
+		return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
+	case jsonnode.Number:
+		epochMillis, err := typedValue.Int64()
+		if err != nil {
+			return nil, err, UNKNOWN_ERROR
+		}
+
+		t := time.UnixMilli(epochMillis).UTC()
+
+		return &t, nil, 0
+	case jsonnode.Null:
+		return nil, nil, 0
+	default:
+		// This case should never happen because we never expect other types to pop up here
+		return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
+	}
 }
 
 // Given flatData and label options, computes the labels or returns a friendly error
