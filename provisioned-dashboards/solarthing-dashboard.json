@@ -19,6 +19,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
+        "hide": false,
         "iconColor": "dark-orange",
         "mappings": {
           "text": {
@@ -52,6 +53,7 @@
           "uid": "${datasource}"
         },
         "enable": true,
+        "hide": false,
         "iconColor": "red",
         "mappings": {
           "text": {
@@ -89,8 +91,22 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 9,
-  "links": [],
-  "liveNow": false,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [
+        "SolarThing"
+      ],
+      "targetBlank": false,
+      "title": "SolarThing Dashboard Links",
+      "tooltip": "",
+      "type": "dashboards",
+      "url": ""
+    }
+  ],
   "panels": [
     {
       "datasource": {
@@ -111,8 +127,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-red",
-                "value": null
+                "color": "dark-red"
               },
               {
                 "color": "#EF843C",
@@ -144,8 +159,7 @@
               }
             ]
           },
-          "unit": "volt",
-          "unitScale": true
+          "unit": "volt"
         },
         "overrides": []
       },
@@ -171,7 +185,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -229,8 +243,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "semi-dark-purple",
-                "value": null
+                "color": "semi-dark-purple"
               },
               {
                 "color": "dark-blue",
@@ -262,8 +275,7 @@
               }
             ]
           },
-          "unit": "fahrenheit",
-          "unitScale": true
+          "unit": "fahrenheit"
         },
         "overrides": []
       },
@@ -279,6 +291,7 @@
         "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
+        "percentChangeColorMode": "standard",
         "reduceOptions": {
           "calcs": [
             "lastNotNull"
@@ -290,7 +303,7 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -375,7 +388,6 @@
         }
       ],
       "title": "Temperature Data",
-      "transformations": [],
       "type": "stat"
     },
     {
@@ -388,7 +400,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 0,
           "mappings": [],
           "max": 3000,
           "min": 0,
@@ -396,8 +407,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#2b2b2b",
-                "value": null
+                "color": "#2b2b2b"
               },
               {
                 "color": "yellow",
@@ -409,8 +419,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": []
       },
@@ -436,7 +445,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -478,8 +487,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "blue",
@@ -499,8 +507,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": []
       },
@@ -526,7 +533,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -569,8 +576,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-green",
-                "value": null
+                "color": "dark-green"
               },
               {
                 "color": "green",
@@ -582,8 +588,7 @@
               }
             ]
           },
-          "unit": "kWh",
-          "unitScale": true
+          "unit": "kWh"
         },
         "overrides": []
       },
@@ -609,7 +614,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -652,6 +657,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -686,8 +692,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -695,8 +700,7 @@
               }
             ]
           },
-          "unit": "volt",
-          "unitScale": true
+          "unit": "volt"
         },
         "overrides": [
           {
@@ -806,10 +810,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -862,7 +869,6 @@
         }
       ],
       "title": "Battery Voltage",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -875,7 +881,6 @@
           "color": {
             "mode": "thresholds"
           },
-          "decimals": 0,
           "displayName": "${__field.labels[\"displayName\"]}",
           "mappings": [],
           "max": 1400,
@@ -884,8 +889,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#2b2b2b",
-                "value": null
+                "color": "#2b2b2b"
               },
               {
                 "color": "yellow",
@@ -897,8 +901,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": []
       },
@@ -911,6 +914,12 @@
       "id": 7,
       "options": {
         "displayMode": "gradient",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
         "maxVizHeight": 300,
         "minVizHeight": 10,
         "minVizWidth": 0,
@@ -927,7 +936,7 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -988,13 +997,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#2b2b2b",
-                "value": null
+                "color": "#2b2b2b"
               }
             ]
           },
-          "unit": "none",
-          "unitScale": true
+          "unit": "none"
         },
         "overrides": [
           {
@@ -1017,7 +1024,7 @@
             "properties": [
               {
                 "id": "custom.width",
-                "value": 71
+                "value": 110
               }
             ]
           }
@@ -1043,7 +1050,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -1104,8 +1111,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "#2b2b2b",
-                "value": null
+                "color": "#2b2b2b"
               },
               {
                 "color": "#77a272",
@@ -1117,8 +1123,7 @@
               }
             ]
           },
-          "unit": "kWh",
-          "unitScale": true
+          "unit": "kWh"
         },
         "overrides": []
       },
@@ -1131,6 +1136,12 @@
       "id": 9,
       "options": {
         "displayMode": "gradient",
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": false
+        },
         "maxVizHeight": 300,
         "minVizHeight": 10,
         "minVizWidth": 0,
@@ -1147,7 +1158,7 @@
         "sizing": "auto",
         "valueMode": "color"
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -1228,8 +1239,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "dark-red",
-                "value": null
+                "color": "dark-red"
               },
               {
                 "color": "#EF843C",
@@ -1261,8 +1271,7 @@
               }
             ]
           },
-          "unit": "volt",
-          "unitScale": true
+          "unit": "volt"
         },
         "overrides": []
       },
@@ -1288,7 +1297,7 @@
         "showThresholdMarkers": true,
         "sizing": "auto"
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -1311,7 +1320,6 @@
         }
       ],
       "title": "Magical Battery Voltage *",
-      "transformations": [],
       "type": "gauge"
     },
     {
@@ -1319,7 +1327,7 @@
         "type": "retrodaredevil-wildgraphql-datasource",
         "uid": "${datasource}"
       },
-      "description": "The wattage as measured to the input of the charge controllers",
+      "description": "The wattage as measured to the input of the charge controllers\n\nTODO: Add solcast forcast",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1332,6 +1340,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1367,8 +1376,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1376,8 +1384,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": [
           {
@@ -1457,10 +1464,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -1505,15 +1515,29 @@
                   "timePath": "dateMillis"
                 }
               ]
+            },
+            {
+              "dataPath": "queryStatus.flatData",
+              "labelOptions": [
+                {
+                  "name": "displayName",
+                  "type": "constant",
+                  "value": "Total"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
             }
           ],
-          "queryText": "query BatteryVoltage($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    solar {\n      dateMillis\n      fragmentIdString\n      packet {\n        pvWattage\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
+          "queryText": "query BatteryVoltage($sourceId: String!, $from: Long!, $to: Long!) {\n  queryStatus(sourceId: $sourceId, from: $from, to: $to) {\n    solar {\n      dateMillis\n      fragmentIdString\n      packet {\n        pvWattage\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n    flatData {\n      dateMillis\n      data {\n        chargeController {\n          pvWattage\n        }\n      }\n    }\n  }\n}",
           "refId": "A",
           "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
         }
       ],
-      "title": "PV Wattage (TODO stack, forecast)",
-      "transformations": [],
+      "title": "PV Wattage",
       "type": "timeseries"
     },
     {
@@ -1533,6 +1557,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1564,8 +1589,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1573,8 +1597,7 @@
               }
             ]
           },
-          "unit": "fahrenheit",
-          "unitScale": true
+          "unit": "fahrenheit"
         },
         "overrides": []
       },
@@ -1593,10 +1616,13 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "hideZeros": false,
+          "maxHeight": 600,
+          "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -1667,6 +1693,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1710,8 +1737,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": [
           {
@@ -1791,10 +1817,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -1846,7 +1875,6 @@
         }
       ],
       "title": "Power Usage (Stacked)",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -1867,6 +1895,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -1910,8 +1939,7 @@
               }
             ]
           },
-          "unit": "kWh",
-          "unitScale": true
+          "unit": "kWh"
         },
         "overrides": [
           {
@@ -1991,10 +2019,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -2039,15 +2070,29 @@
                   "timePath": "dateMillis"
                 }
               ]
+            },
+            {
+              "dataPath": "data.sum",
+              "labelOptions": [
+                {
+                  "name": "displayName",
+                  "type": "constant",
+                  "value": "Total"
+                }
+              ],
+              "timeFields": [
+                {
+                  "timePath": "dateMillis"
+                }
+              ]
             }
           ],
-          "queryText": "query dailyKWHQuery($sourceId: String!, $from: Long!, $to: Long!) {\n  data: queryFullDay(from: $from, to: $to, sourceId: $sourceId) {\n    data: dailyKWH {\n      dateMillis\n      data\n      fragmentIdString\n      identifiable {\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n  }\n}",
+          "queryText": "query dailyKWHQuery($sourceId: String!, $from: Long!, $to: Long!) {\n  data: queryFullDay(from: $from, to: $to, sourceId: $sourceId) {\n    data: dailyKWH {\n      dateMillis\n      data\n      fragmentIdString\n      identifiable {\n        identifier {\n          representation\n        }\n        identityInfo {\n          displayName\n        }\n      }\n    }\n    sum:dailyKWHSum {\n      dateMillis\n      data\n    }\n  }\n}",
           "refId": "A",
           "variables": "{\n  \"sourceId\": \"$sourceId\"\n}"
         }
       ],
-      "title": "Daily kWh (TODO stack)",
-      "transformations": [],
+      "title": "Daily kWh",
       "type": "timeseries"
     },
     {
@@ -2068,6 +2113,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2111,8 +2157,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": [
           {
@@ -2192,10 +2237,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -2247,7 +2295,6 @@
         }
       ],
       "title": "Load on Battery (Stacked)",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -2268,6 +2315,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2311,8 +2359,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": [
           {
@@ -2392,10 +2439,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -2448,7 +2498,6 @@
         }
       ],
       "title": "Generator Charging (Stacked)",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -2469,6 +2518,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2512,8 +2562,7 @@
               }
             ]
           },
-          "unit": "kwatth",
-          "unitScale": true
+          "unit": "kwatth"
         },
         "overrides": [
           {
@@ -2593,10 +2642,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -2648,7 +2700,6 @@
         }
       ],
       "title": "Energy used over time (Stacked)",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -2669,6 +2720,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2712,8 +2764,7 @@
               }
             ]
           },
-          "unit": "watt",
-          "unitScale": true
+          "unit": "watt"
         },
         "overrides": [
           {
@@ -2793,10 +2844,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -2849,7 +2903,6 @@
         }
       ],
       "title": "Generator Buying (Stacked)",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -2869,6 +2922,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -2908,8 +2962,7 @@
               }
             ]
           },
-          "unit": "fahrenheit",
-          "unitScale": true
+          "unit": "fahrenheit"
         },
         "overrides": []
       },
@@ -2928,10 +2981,13 @@
           "showLegend": true
         },
         "tooltip": {
-          "mode": "single",
+          "hideZeros": false,
+          "maxHeight": 600,
+          "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -3130,6 +3186,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -3172,8 +3229,7 @@
               }
             ]
           },
-          "unit": "volt",
-          "unitScale": true
+          "unit": "volt"
         },
         "overrides": [
           {
@@ -3283,10 +3339,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -3339,7 +3398,6 @@
         }
       ],
       "title": "Average Battery Voltage",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -3372,8 +3430,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": []
       },
@@ -3396,7 +3453,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -3439,6 +3496,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -3481,8 +3539,7 @@
               }
             ]
           },
-          "unit": "volt",
-          "unitScale": true
+          "unit": "volt"
         },
         "overrides": [
           {
@@ -3592,10 +3649,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "multi",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -3648,7 +3708,6 @@
         }
       ],
       "title": "Battery Voltage Temperature Compensated",
-      "transformations": [],
       "type": "timeseries"
     },
     {
@@ -3681,8 +3740,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": []
       },
@@ -3705,7 +3763,7 @@
         },
         "showHeader": true
       },
-      "pluginVersion": "10.3.3",
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -3743,6 +3801,7 @@
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 10,
             "gradientMode": "none",
@@ -3782,8 +3841,7 @@
               }
             ]
           },
-          "unit": "ms",
-          "unitScale": true
+          "unit": "ms"
         },
         "overrides": []
       },
@@ -3802,10 +3860,13 @@
           "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
+          "maxHeight": 600,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.0.1",
       "targets": [
         {
           "datasource": {
@@ -3845,8 +3906,9 @@
       "type": "timeseries"
     }
   ],
+  "preload": false,
   "refresh": "30s",
-  "schemaVersion": 39,
+  "schemaVersion": 41,
   "tags": [
     "SolarThing"
   ],
@@ -3854,33 +3916,25 @@
     "list": [
       {
         "current": {
-          "selected": true,
-          "text": "SolarThing GraphQL",
-          "value": "fa66cf68-c3d8-4490-a89d-0c3b6a87fff8"
+          "text": "Wild Mountain Farms SolarThing",
+          "value": "9b2fe259-3112-4fb0-8d88-0788c6d6b5b4"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Data source",
-        "multi": false,
         "name": "datasource",
         "options": [],
         "query": "retrodaredevil-wildgraphql-datasource",
-        "queryValue": "",
         "refresh": 1,
         "regex": "",
-        "skipUrlSync": false,
         "type": "datasource"
       },
       {
         "current": {
-          "selected": false,
           "text": "default",
           "value": "default"
         },
-        "hide": 0,
         "includeAll": false,
         "label": "Source ID",
-        "multi": false,
         "name": "sourceId",
         "options": [
           {
@@ -3895,8 +3949,6 @@
           }
         ],
         "query": "default,cabin",
-        "queryValue": "",
-        "skipUrlSync": false,
         "type": "custom"
       }
     ]
@@ -3909,6 +3961,5 @@
   "timezone": "browser",
   "title": "Wild Mountain Farms SolarThing",
   "uid": "d7152e74-753c-499b-b397-3b6fae1e6675",
-  "version": 29,
-  "weekStart": ""
+  "version": 37
 }
