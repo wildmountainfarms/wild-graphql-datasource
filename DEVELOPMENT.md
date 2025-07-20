@@ -40,6 +40,16 @@ go get -u
 go mod tidy
 ```
 
+## Releasing a new version
+
+Bump version in `package.json`.
+Run `npm install`.
+Update `CHANGELOG.md`.
+`git commit ...`.
+If the version in `package.json` is `1.5.1`, make a git tag that is `v1.5.1`,
+with `git tag v1.5.1`.
+h
+
 ## Updating provisioned dashboards
 
 After updating a provisioned dashboard, make sure it's data source is set correctly.

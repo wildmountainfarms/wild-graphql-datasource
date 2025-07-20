@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.5.1
+
+Fixed regression within the query editor that occurred when constant labels were used.
+Dependency updates for stability.
+
 ## 1.5.0
 
 * Feature: [#14](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/14) support for variable queries
