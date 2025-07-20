@@ -1,7 +1,7 @@
-import React, {ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef} from 'react';
-import {Button, Checkbox, IconButton, InlineField, Input, Select, TextArea} from '@grafana/ui';
-import {CoreApp, QueryEditorProps} from '@grafana/data';
-import {DataSource} from '../datasource';
+import React, { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef } from 'react';
+import { Button, Checkbox, Combobox, IconButton, InlineField, Input, TextArea } from '@grafana/ui';
+import { CoreApp, QueryEditorProps } from '@grafana/data';
+import { DataSource } from '../datasource';
 import {
   DEFAULT_LABEL_OPTION_FIELD_CONFIG,
   getQueryVariablesAsJsonString,
@@ -10,27 +10,26 @@ import {
   ParsingOption,
   TimeField,
   WildGraphQLAnyQuery,
-  WildGraphQLDataSourceOptions
+  WildGraphQLDataSourceOptions,
 } from '../types';
-import {GraphiQLInterface} from 'graphiql';
+import { GraphiQLInterface } from 'graphiql';
 import {
   EditorContextProvider,
   ExecutionContextProvider,
   ExplorerContextProvider,
   PluginContextProvider,
   SchemaContextProvider,
-  useEditorContext
+  useEditorContext,
 } from '@graphiql/react';
-import {Fetcher} from '@graphiql/toolkit';
-import {FetcherOpts, FetcherParams} from "@graphiql/toolkit/src/create-fetcher/types";
-import {getBackendSrv, getTemplateSrv} from "@grafana/runtime";
-import {firstValueFrom} from 'rxjs';
+import { Fetcher } from '@graphiql/toolkit';
+import { FetcherOpts, FetcherParams } from '@graphiql/toolkit/src/create-fetcher/types';
+import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
+import { firstValueFrom } from 'rxjs';
 
 import 'graphiql/graphiql.css';
-import './modify_graphiql.css'
-import {ExecutionResult} from "graphql-ws";
-import {getInterpolatedAutoPopulatedVariables, interpolateVariables} from "../variables";
-
+import './modify_graphiql.css';
+import { ExecutionResult } from 'graphql-ws';
+import { getInterpolatedAutoPopulatedVariables, interpolateVariables } from '../variables';
 
 type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
 interface InnerQueryProps {
@@ -410,8 +409,6 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
     <>
       <h3 className="page-heading">Query</h3>
       <div className="gf-form-group">
-        {/*When we attempt to debug the Combobox error, this line reproduces it*/}
-        {/*<Combobox options={[{label: "lol1", value: "lol1"}, {label: "lol2", value: "lol2"}]} onChange={newValue => {}} width={"auto"} minWidth={10}/>*/}
         <div className="gf-form" style={{height: "450px"}}>
           {/*TODO allow this to be resized*/}
           <GraphiQLInterface
@@ -591,8 +588,7 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
                     tooltip={`Specify how the custom label "${labelOption.name}" should be populated. A type of "Constant" means that you may put whatever text you would like as the label. A type of "Field" means that the given field will be used as the label's value.`}
                     labelWidth={LABEL_WIDTH}
                   >
-                    {/* TODO use Combobox here https://developers.grafana.com/ui/latest/index.html?path=/docs/forms-combobox--docs*/}
-                    <Select
+                    <Combobox
                       width={14}
                       options={[
                         {label: "Constant", value: LabelOptionType.CONSTANT},
@@ -627,7 +623,7 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
                   {fieldConfig &&
                     <>
                       <InlineField label="If absent" labelWidth={10}>
-                        <Select
+                        <Combobox
                           width={16}
                           options={[
                             {label: "Error", value: "required"},
