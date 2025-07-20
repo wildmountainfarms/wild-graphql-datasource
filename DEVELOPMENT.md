@@ -1,13 +1,50 @@
 # Development
 
-
+This document contains information for developers and those wanting to contribute to the project.
 
 https://grafana.com/developers/plugin-tools/create-a-plugin/develop-a-plugin/best-practices
 
 https://grafana.com/developers/plugin-tools/tutorials/build-a-data-source-backend-plugin
 
+## Testing
 
-## Installing via grafana-cli
+In one shell, run this:
+
+```shell
+# keep this in the background
+npm run dev
+```
+And in another shell:
+```shell
+# Note that build:debug is used here to allow debugging
+mage -v build:debug && npm run server
+# Kill and restart this as necessary
+```
+
+---
+
+## Updating dependencies
+
+For security reasons, please do not make PRs with massive changes to `package-lock.json`.
+If you would like dependencies to be up to date please make a PR for me ([@retrodaredevil](https://github.com/retrodaredevil)) to do so.
+
+https://grafana.com/developers/plugin-tools/reference/cli-commands#update
+
+```shell
+npx @grafana/create-plugin@latest update
+```
+
+```shell
+npm update
+go get -u
+go mod tidy
+```
+
+## Updating provisioned dashboards
+
+After updating a provisioned dashboard, make sure it's data source is set correctly.
+
+## Installing a version before its official release
 
 If you want to test a released, but unsigned plugin, follow this.
 
@@ -17,9 +54,10 @@ https://grafana.com/docs/grafana/latest/cli/#override-default-plugin-zip-url
 grafana cli --pluginUrl https://github.com/wildmountainfarms/wild-graphql-datasource/releases/download/v0.0.6/retrodaredevil-wildgraphql-datasource-0.0.6.zip plugins install retrodaredevil-wildgraphql-datasource
 ```
 
-Then update `grafana.ini` with
+If necessary, you can `grafana.ini` with
 
 ```ini
+# NOTE: Only do this if absolutely necessary. Even unreleased versions of Wild GraphQL Datasource should not require this
 [plugins]
 allow_loading_unsigned_plugins = retrodaredevil-wildgraphql-datasource
 ```
@@ -29,7 +67,9 @@ allow_loading_unsigned_plugins = retrodaredevil-wildgraphql-datasource
 ### Set up your system
 
 * Web requirements
-  * Install nvm https://github.com/nvm-sh/nvm#installing-and-updating
+  * Install node using your preferred way:
+    * https://github.com/tj/n
+    * https://github.com/nvm-sh/nvm#installing-and-updating
 * Backend requirements
   * Install go https://go.dev/doc/install
   * Install Mage https://magefile.org/
@@ -38,27 +78,6 @@ allow_loading_unsigned_plugins = retrodaredevil-wildgraphql-datasource
     * `npm run server` command uses `docker compose` to bring up Grafana
   * Make sure your user is part of the `docker` group
 
-An example of commands you *could* run.
-Customize this setup to your liking.
-
-```shell
-# install nvm https://github.com/nvm-sh/nvm#installing-and-updating
-nvm install 20
-
-rm -rf /usr/local/go
-wget -c https://dl.google.com/go/go1.21.5.linux-amd64.tar.gz -O - | sudo tar -xz -C /usr/local
-# /usr/local/go is GOROOT $HOME/go is GOPATH, so add both bins to path
-echo 'export PATH="$PATH:/usr/local/go/bin:$HOME/go/bin"' >> ~/.bashrc
-
-cd ~/Documents/Clones
-git clone https://github.com/magefile/mage
-cd mage
-# This will install to GOPATH, which is $HOME/go by default
-go run bootstrap.go
-
-# *docker installation not shown*
-# *adding $USER to docker group not shown*
-```
 
 ### Setup build environment
 
@@ -77,36 +96,6 @@ Node setup:
 npm install
 ```
 
-
-### Test inside Grafana instance
-
-Note that `npm run server` uses `docker compose` under the hood.
-
-```shell
-npm run dev
-mage -v build:linux
-npm run server
-```
-
-⭐⭐ Or more simply, in one shell run this
-```shell
-npm run dev
-# keep this in the background
-```
-And in another shell:
-```shell
-# Note that build:debug is used here to allow debugging
-mage -v build:debug && npm run server
-# Kill and restart this as necessary
-```
-
-To test a different version of Grafana, simply use something like this:
-
-```shell
-mage -v build:debug && GRAFANA_VERSION=9.3.16-ubuntu npm run server
-```
-
-
 ### Recommended development environment
 
 You may choose to use VS Code, which has free tools for developing TypeScript and Go code.
@@ -116,43 +105,6 @@ Alternatively, WebStorm (also not free) covers TypeScript development and GoLand
 If you are using IntelliJ IDEA Ultimate, make sure go to "Language & Frameworks > Go Modules" and click "Enable go modules integration".
 
 If you are using VS Code, this is a good read: https://github.com/golang/vscode-go/blob/master/docs/gopath.md
-
-
-### Common Errors During Development
-
-* `Watchpack Error (watcher): Error: ENOSPC: System limit for number of file watchers reached, watch`
-  * https://stackoverflow.com/a/55543310/5434860
-
-### Example repos
-
-Some random examples of data source plugin source code
-
-* https://github.com/grafana/grafana-infinity-datasource/tree/main/pkg
-* https://github.com/cnosdb/grafana-datasource-plugin/blob/main/cnosdb/pkg/plugin/query_model.go
-* https://github.com/grafana/grafana-plugin-examples/tree/main/examples/datasource-http-backend
-
-### Updating dependencies
-
-```shell
-npm update
-go get -u
-go mod tidy
-```
-
-Also this for doing a proper upgrade of all npm dependencies: https://grafana.com/developers/plugin-tools/reference/cli-commands#update
-
-```shell
-npx @grafana/create-plugin@latest update
-```
-
-## Dependency Notes
-
-This section contains notes about dependencies.
-
-* `graphql-ws` is not actually required by us, but this issue is unresolved so that's why we include it
-  * https://github.com/graphql/graphiql/issues/2405#issuecomment-1469851608 (yes as of writing it says it's closed, but it's not)
-  * It's not a bad thing that we include this dependency because it gives us a couple of types that we end up using
-
 
 ## To-Do
 
@@ -167,11 +119,6 @@ Lower priority To-Dos
 * Add metrics to backend component: https://grafana.com/developers/plugin-tools/create-a-plugin/extend-a-plugin/add-logs-metrics-traces-for-backend-plugins#implement-metrics-in-your-plugin
 * Support returning logs data: https://grafana.com/developers/plugin-tools/tutorials/build-a-logs-data-source-plugin
   * We could just add `"logs": true` to `plugin.json`, however we need to support the renaming of fields because sometimes the `body` or `timestamp` fields will be nested
-* Publish as a plugin
-  * https://grafana.com/developers/plugin-tools/publish-a-plugin/publish-a-plugin
-  * https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token
-  * https://grafana.com/legal/plugins/
-  * https://grafana.com/developers/plugin-tools/publish-a-plugin/provide-test-environment
 * Create a GraphQL button panel (or a SolarThing app) that has a button panel that can be used to
   * If we create an app, we can follow https://github.com/RedisGrafana/grafana-redis-app
     * https://github.com/RedisGrafana/grafana-redis-app/blob/e093d18a021bb28ba7df3a54d7ad17c2d8e38f88/src/redis-gears-panel/components/RedisGearsPanel/RedisGearsPanel.tsx#L314

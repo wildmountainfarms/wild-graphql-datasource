@@ -90,7 +90,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 9,
+  "id": 3,
   "links": [
     {
       "asDropdown": false,
@@ -3916,8 +3916,8 @@
     "list": [
       {
         "current": {
-          "text": "Wild Mountain Farms SolarThing",
-          "value": "9b2fe259-3112-4fb0-8d88-0788c6d6b5b4"
+          "text": "SolarThing GraphQL",
+          "value": "fa66cf68-c3d8-4490-a89d-0c3b6a87fff8"
         },
         "includeAll": false,
         "label": "Data source",
@@ -3961,5 +3961,5 @@
   "timezone": "browser",
   "title": "Wild Mountain Farms SolarThing",
   "uid": "d7152e74-753c-499b-b397-3b6fae1e6675",
-  "version": 37
+  "version": 2
 }
