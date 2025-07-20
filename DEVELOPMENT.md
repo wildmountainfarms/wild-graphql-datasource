@@ -48,7 +48,8 @@ Update `CHANGELOG.md`.
 `git commit ...`.
 If the version in `package.json` is `1.5.1`, make a git tag that is `v1.5.1`,
 with `git tag v1.5.1`.
-h
+`git push && git push origin v1.5.1`.
+Go to https://grafana.com/orgs/retrodaredevil/plugins to submit update.
 
 ## Updating provisioned dashboards
 
