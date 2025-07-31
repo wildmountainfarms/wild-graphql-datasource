@@ -3,10 +3,12 @@ package parsing
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 	"reflect"
 	"slices"
 	"testing"
+	"time"
+
+	"github.com/wildmountainfarms/wild-graphql-datasource/pkg/util/jsonnode"
 )
 
 func TestExplodeArrayWhenGivenArrayOfNumbers(t *testing.T) {
@@ -264,6 +266,39 @@ func TestFlattenAndExplodeWithNestedArrayThatGetsExploded(t *testing.T) {
 			}
 		} else {
 			t.Errorf("Unexpected type for result %d. type: %v", i, reflect.TypeOf(dataValue))
+		}
+	}
+}
+
+func TestParseTime(t *testing.T) {
+	expectedTime := time.Date(2025, 05, 21, 0, 0, 0, 0, time.UTC)
+	jsonInputs := []jsonnode.Node{
+		jsonnode.NULL,
+		jsonnode.Number("1747785600000"),
+		jsonnode.String("1747785600000"),
+		jsonnode.String("2025-05-21T00:00:00Z"),
+		jsonnode.String("2025-05-21 00:00:00"),
+	}
+
+	for i, expectedValue := range []*time.Time{
+		nil,
+		&expectedTime,
+		&expectedTime,
+		&expectedTime,
+	} {
+		input := jsonInputs[i]
+
+		dateValue, err, _ := parseTimeField(input)
+		if err != nil {
+			t.Errorf("Unexpected error at %d: %s", i, err)
+		}
+
+		if expectedValue == nil {
+			if dateValue != nil {
+				t.Errorf("Result %d had unexpected value: %s, expected: %s", i, dateValue, expectedValue)
+			}
+		} else if expectedValue == nil && dateValue != nil || *dateValue != *expectedValue {
+			t.Errorf("Result %d had unexpected value: %s, expected: %s", i, dateValue, expectedValue)
 		}
 	}
 }
