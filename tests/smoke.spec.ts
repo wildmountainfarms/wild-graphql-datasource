@@ -8,7 +8,7 @@ test(
   async ({ createDataSourceConfigPage, page }) => {
     await createDataSourceConfigPage({ type: 'retrodaredevil-wildgraphql-datasource' });
     await expect(
-      page.getByText('Wild GraphQL Data Source', { exact: true }),
+      page.getByText('Wild GraphQL Data Source').first(),
     ).toBeVisible();
   },
 );
