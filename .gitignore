@@ -33,3 +33,7 @@ e2e-results/
 .idea
 
 .eslintcache
+
+# Playwright
+playwright/.auth/
+playwright-report/

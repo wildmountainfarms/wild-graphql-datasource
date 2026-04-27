@@ -10,8 +10,6 @@ services:
         # https://grafana.com/docs/grafana/latest/whatsnew/
         grafana_version: ${GRAFANA_VERSION:-10.3.3}
         development: 'true'
-    security_opt:
-      - seccomp:unconfined # To allow debugging with Delve
     deploy:
       resources:
         limits:
