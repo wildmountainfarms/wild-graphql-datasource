@@ -29,7 +29,7 @@ type FetcherParams = {
 
 import { getInterpolatedAutoPopulatedVariables, interpolateVariables } from '../variables';
 
-type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
+export type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
 interface InnerQueryProps {
   query: WildGraphQLAnyQuery
   onChange: (value: WildGraphQLAnyQuery) => void,
@@ -132,6 +132,8 @@ export function QueryEditor(props: Props) {
     </GraphiQLProvider>
   );
 }
+
+export default QueryEditor;
 
 function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   const isBackendOnlyQuery = app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting;
