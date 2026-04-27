@@ -5,47 +5,35 @@ services:
     container_name: 'grafana-dev-wildgraphql'
     platform: 'linux/amd64'
     build:
-      context: ./.config
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana-oss}
         # https://grafana.com/docs/grafana/latest/whatsnew/
         grafana_version: ${GRAFANA_VERSION:-10.3.3}
-        development: "true"
-    cap_add:
-      - SYS_PTRACE # To allow debugging with Delve
+        development: 'true'
     security_opt:
       - seccomp:unconfined # To allow debugging with Delve
     deploy:
       resources:
         limits:
-          cpus: "2.0"
+          cpus: '2.0'
           memory: 1024M
         reservations:
-          cpus: "0.75"
+          cpus: '0.75'
           memory: 256M
-    ports:
-      - "3000:3000/tcp"
-      - "2345:2345/tcp"
     volumes:
-      - ./dist:/var/lib/grafana/plugins/retrodaredevil-wildgraphql-datasource:ro
-      - ./provisioning:/etc/grafana/provisioning:ro
       - ./provisioned-dashboards:/provisioned-dashboards:ro
-      - .:/root/retrodaredevil-wildgraphql-datasource:ro
-    environment:
-      NODE_ENV: development
-      GF_LOG_FILTERS: plugin.retrodaredevil-wildgraphql-datasource:debug
-#      GF_LOG_LEVEL: debug
-      GF_DATAPROXY_LOGGING: 1
-      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: retrodaredevil-wildgraphql-datasource
+    extends:
+      file: .config/docker-compose-base.yaml
+      service: grafana
   graphql-echo:
     container_name: 'grafana-dev-wildgraphql-graphql-echo'
-#    image: 'ghcr.io/retrodaredevil/graphql-echo:0.1'
+    #    image: 'ghcr.io/retrodaredevil/graphql-echo:0.1'
     image: 'ghcr.io/retrodaredevil/graphql-echo:sha-b1c6835'
     deploy:
       resources:
         limits:
-          cpus: "2.0"
+          cpus: '2.0'
           memory: 1024M
         reservations:
-          cpus: "0.75"
+          cpus: '0.75'
           memory: 256M
