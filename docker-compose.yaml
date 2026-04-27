@@ -6,9 +6,7 @@ services:
     platform: 'linux/amd64'
     build:
       args:
-        grafana_image: ${GRAFANA_IMAGE:-grafana-oss}
-        # https://grafana.com/docs/grafana/latest/whatsnew/
-        grafana_version: ${GRAFANA_VERSION:-10.3.3}
+        grafana_version: ${GRAFANA_VERSION:-11.6.14}
         development: 'true'
     deploy:
       resources:

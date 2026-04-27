@@ -25,15 +25,14 @@ dist/
 artifacts/
 work/
 ci/
-e2e-results/
-**/cypress/videos
-**/cypress/report.json
 
 # Editor
 .idea
+.vscode/settings.json
 
 .eslintcache
 
 # Playwright
 playwright/.auth/
 playwright-report/
+test-results/
