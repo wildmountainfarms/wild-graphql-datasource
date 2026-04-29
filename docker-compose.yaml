@@ -23,7 +23,7 @@ services:
       service: grafana
   graphql-echo:
     container_name: 'grafana-dev-wildgraphql-graphql-echo'
-    #    image: 'ghcr.io/retrodaredevil/graphql-echo:0.1'
+#   image: 'ghcr.io/retrodaredevil/graphql-echo:0.1'
     image: 'ghcr.io/retrodaredevil/graphql-echo:sha-b1c6835'
     deploy:
       resources:

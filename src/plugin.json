@@ -14,20 +14,17 @@
       "name": "Lavender Shannon",
       "url": "https://github.com/retrodaredevil"
     },
-    "keywords": ["datasource", "graphql"],
+    "keywords": [
+      "datasource",
+      "graphql"
+    ],
     "logos": {
       "small": "img/logo.svg",
       "large": "img/logo.svg"
     },
     "links": [
-      {
-        "name": "Source Code",
-        "url": "https://github.com/wildmountainfarms/wild-graphql-datasource"
-      },
-      {
-        "name": "License",
-        "url": "https://github.com/wildmountainfarms/wild-graphql-datasource/blob/-/LICENSE"
-      }
+      { "name": "Source Code", "url": "https://github.com/wildmountainfarms/wild-graphql-datasource" },
+      { "name": "License", "url": "https://github.com/wildmountainfarms/wild-graphql-datasource/blob/-/LICENSE" }
     ],
     "screenshots": [
       {
