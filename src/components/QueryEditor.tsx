@@ -54,7 +54,7 @@ const INPUT_WIDTH = 48;
  * are also automatically populated by this method, using
  */
 function createFetcher(url: string, withCredentials: boolean, basicAuth?: string) {
-  const headers: Record<string, string> = {
+  const headers: Record<string, any> = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   };
