@@ -79,7 +79,6 @@
     "@grafana/ui": "^12.2.0",
     "graphiql": "^4.1.2",
     "graphql": "^16.8.1",
-    "graphql-ws": "^4.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tslib": "2.8.1"
