@@ -14,18 +14,13 @@ import {
 } from '../types';
 import { GraphiQLInterface } from 'graphiql';
 import { GraphiQLProvider, useEditorContext } from '@graphiql/react';
+import type { Fetcher, FetcherOpts, FetcherParams } from '@graphiql/toolkit';
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
 
 import 'graphiql/style.css';
 import './modify_graphiql.css';
 import { ExecutionResult } from 'graphql';
-
-type FetcherParams = {
-  query: string;
-  operationName?: string | null;
-  variables?: Record<string, unknown>;
-};
 
 import { getInterpolatedAutoPopulatedVariables, interpolateVariables } from '../variables';
 
@@ -53,7 +48,7 @@ const INPUT_WIDTH = 48;
  * One key difference here is that it is expected that all variables populated automatically by the backend
  * are also automatically populated by this method, using
  */
-function createFetcher(url: string, withCredentials: boolean, basicAuth?: string) {
+function createFetcher(url: string, withCredentials: boolean, basicAuth?: string): Fetcher {
   const headers: Record<string, any> = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -66,7 +61,7 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
   //   If you navigate straight to "Alert rules", for example, getTemplateSrv() will not be able to replace $__to and $__from variables.
   //   This has the implication that the "Execute query" button performs a query with "to" and "from" variables that are unlike what is actually configured.
   const templateSrv = getTemplateSrv();
-  return async (graphQLParams: FetcherParams) => {
+  return async (graphQLParams: FetcherParams, opts?: FetcherOpts) => {
     const variables = {
       ...getInterpolatedAutoPopulatedVariables(templateSrv),
       ...interpolateVariables(graphQLParams.variables ?? {}, templateSrv), // remember one of the downsides here is that we cannot pass scopedVars here because we don't have access to it
