@@ -16,6 +16,12 @@ Hide the response window only if one if its parents has the hide-execute-button 
 }
 
 
+/* Hide the tab bar — tabs make no sense for a single-query panel editor */
+.graphiql-container .graphiql-session-header {
+  display: none !important;
+}
+
+
 /*
 Until either https://github.com/grafana/grafana/issues/85044 is fixed or https://github.com/graphql/graphiql/issues/3565
 is fixed, we need to disable pointer events for any info tooltips that have "javascript:void 0" as their href.

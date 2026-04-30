@@ -77,6 +77,8 @@
     "@grafana/runtime": "^12.2.0",
     "@grafana/schema": "^12.2.0",
     "@grafana/ui": "^12.2.0",
+    "@graphiql/plugin-doc-explorer": "^0.2.2",
+    "@graphiql/react": "^0.34.1",
     "graphiql": "^4.1.2",
     "graphql": "^16.8.1",
     "react": "^18.3.1",

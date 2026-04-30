@@ -1,4 +1,4 @@
-import React, { ChangeEvent, KeyboardEvent, useMemo, useRef } from 'react';
+import React, { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef } from 'react';
 import { Button, Checkbox, Combobox, IconButton, InlineField, Input, TextArea } from '@grafana/ui';
 import { CoreApp, QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
@@ -13,7 +13,14 @@ import {
   WildGraphQLDataSourceOptions,
 } from '../types';
 import { GraphiQLInterface } from 'graphiql';
-import { GraphiQLProvider, useEditorContext } from '@graphiql/react';
+import {
+  EditorContextProvider,
+  ExecutionContextProvider,
+  PluginContextProvider,
+  SchemaContextProvider,
+  useEditorContext,
+} from '@graphiql/react';
+import { DocExplorerContextProvider } from "@graphiql/plugin-doc-explorer"
 import type { Fetcher, FetcherOpts, FetcherParams } from '@graphiql/toolkit';
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
@@ -108,23 +115,41 @@ export function QueryEditor(props: Props) {
   };
 
   return (
-    <GraphiQLProvider
-      fetcher={fetcher}
-      defaultTabs={[{ query: correctedQuery.queryText }]}
-      variables={getQueryVariablesAsJsonString(query)}
-      onEditOperationName={(operationName) => {
-        props.onChange({ ...correctedQuery, operationName: operationName || undefined });
-      }}
-    >
-      {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
-      <div className={isAlerting ? "hide-execute-button" : ""}>
-        <InnerQueryEditor
-          query={correctedQuery}
-          onChange={props.onChange}
-          app={props.app}
-        />
-      </div>
-    </GraphiQLProvider>
+    <>
+      {/*By not providing storage, history contexts, they won't be used*/}
+      {/*<StorageContextProvider storage={DummyStorage}>*/}
+      {/*  <HistoryContextProvider maxHistoryLength={0}>*/}
+      <EditorContextProvider
+        // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
+        defaultTabs={[{
+          query: correctedQuery.queryText,
+          // NOTE: For some reason if you specify variable here, it just doesn't work...
+        }]}
+        variables={getQueryVariablesAsJsonString(query)}
+        // we don't need to pass onEditOperationName here because we have a callback that handles it ourselves
+      >
+        <SchemaContextProvider fetcher={fetcher}>
+          <ExecutionContextProvider
+            fetcher={fetcher}
+            // NOTE: We don't pass the operationName here because when the user presses the run button,
+            //   we want them to always have to choose which operation they want
+          >
+            <DocExplorerContextProvider> {/*Explorer context needed for documentation*/}
+              <PluginContextProvider>
+                {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
+                <div className={isAlerting ? "hide-execute-button" : ""}>
+                  <InnerQueryEditor
+                    query={correctedQuery}
+                    onChange={props.onChange}
+                    app={props.app}
+                  />
+                </div>
+              </PluginContextProvider>
+            </DocExplorerContextProvider>
+          </ExecutionContextProvider>
+        </SchemaContextProvider>
+      </EditorContextProvider>
+    </>
   );
 }
 
@@ -137,6 +162,13 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
 
   const onOperationNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newOperationName = event.target.value || undefined;
+    const queryEditor = editorContext?.queryEditor;
+    if (queryEditor) {
+      // We don't use editorContext.setOperationName because that function does not accept null values for some reason
+      // Note to future me - if you need to look at the source of setOperationName, search everywhere for `'setOperationName'` in the graphiql codebase
+      // NOTE: I'm not sure if setting this value actually does anything
+      queryEditor.operationName = newOperationName ?? null;
+    }
     // by updating the active tab values, we are able to switch the "active operation" to whatever the user has just typed out
     editorContext?.updateActiveTabValues({operationName: newOperationName})
     onChange({ ...query, operationName: newOperationName });
@@ -358,7 +390,21 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   //   });
   // };
 
-
+  const currentOperationName = editorContext?.queryEditor?.operationName;
+  useEffect(() => {
+    // if currentOperationName is null, that means that the query is unnamed
+    // currentOperationName should never be undefined unless queryEditor is undefined
+    // Treat an empty, null, or undefined operation name the same.
+    //   We need to do this because otherwise we are constantly doing onChange calls, which results in 100% CPU utilization
+    if (
+      currentOperationName !== undefined
+      && (query.operationName || undefined) !== (currentOperationName || undefined)
+    ) {
+      // Remember that in our world, we use the string | undefined type for operationName,
+      //   so we're basically converting null to undefined here
+      onChange({ ...query, operationName: currentOperationName || undefined });
+    }
+  }, [onChange, query, currentOperationName]);
 
   return (
     <>
