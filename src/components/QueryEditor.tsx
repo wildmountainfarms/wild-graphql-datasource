@@ -18,10 +18,11 @@ import {
   ExecutionContextProvider,
   PluginContextProvider,
   SchemaContextProvider,
+  StorageContextProvider,
   useEditorContext,
 } from '@graphiql/react';
-import { DocExplorerContextProvider } from "@graphiql/plugin-doc-explorer"
-import type { Fetcher, FetcherOpts, FetcherParams } from '@graphiql/toolkit';
+import { DocExplorerContextProvider } from '@graphiql/plugin-doc-explorer';
+import type { Fetcher, FetcherOpts, FetcherParams, Storage } from '@graphiql/toolkit';
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
 
@@ -114,41 +115,50 @@ export function QueryEditor(props: Props) {
     ...(query as Partial<WildGraphQLAnyQuery>), // cast to partial to make compiler point out missing fields
   };
 
+   const noopStorage = useRef<Storage>({
+     getItem: () => null,
+     setItem: () => {},
+     removeItem: () => {},
+     clear: () => {},
+     length: 0,
+ }).current;
+
   return (
     <>
       {/*By not providing storage, history contexts, they won't be used*/}
-      {/*<StorageContextProvider storage={DummyStorage}>*/}
+      <StorageContextProvider storage={noopStorage}>
       {/*  <HistoryContextProvider maxHistoryLength={0}>*/}
-      <EditorContextProvider
-        // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
-        defaultTabs={[{
-          query: correctedQuery.queryText,
-          // NOTE: For some reason if you specify variable here, it just doesn't work...
-        }]}
-        variables={getQueryVariablesAsJsonString(query)}
-        // we don't need to pass onEditOperationName here because we have a callback that handles it ourselves
-      >
-        <SchemaContextProvider fetcher={fetcher}>
-          <ExecutionContextProvider
-            fetcher={fetcher}
-            // NOTE: We don't pass the operationName here because when the user presses the run button,
-            //   we want them to always have to choose which operation they want
-          >
-            <DocExplorerContextProvider> {/*Explorer context needed for documentation*/}
-              <PluginContextProvider>
-                {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
-                <div className={isAlerting ? "hide-execute-button" : ""}>
-                  <InnerQueryEditor
-                    query={correctedQuery}
-                    onChange={props.onChange}
-                    app={props.app}
-                  />
-                </div>
-              </PluginContextProvider>
-            </DocExplorerContextProvider>
-          </ExecutionContextProvider>
-        </SchemaContextProvider>
-      </EditorContextProvider>
+        <EditorContextProvider
+          // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
+          defaultTabs={[{
+            query: correctedQuery.queryText,
+            // NOTE: For some reason if you specify variable here, it just doesn't work...
+          }]}
+          variables={getQueryVariablesAsJsonString(query)}
+          // we don't need to pass onEditOperationName here because we have a callback that handles it ourselves
+        >
+          <SchemaContextProvider fetcher={fetcher}>
+            <ExecutionContextProvider
+              fetcher={fetcher}
+              // NOTE: We don't pass the operationName here because when the user presses the run button,
+              //   we want them to always have to choose which operation they want
+            >
+              <DocExplorerContextProvider> {/*Explorer context needed for documentation*/}
+                <PluginContextProvider>
+                  {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
+                  <div className={isAlerting ? "hide-execute-button" : ""}>
+                    <InnerQueryEditor
+                      query={correctedQuery}
+                      onChange={props.onChange}
+                      app={props.app}
+                    />
+                  </div>
+                </PluginContextProvider>
+              </DocExplorerContextProvider>
+            </ExecutionContextProvider>
+          </SchemaContextProvider>
+        </EditorContextProvider>
+      </StorageContextProvider>
     </>
   );
 }

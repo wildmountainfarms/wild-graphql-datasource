@@ -67,6 +67,29 @@ test.describe('GraphQL Echo dashboard', () => {
     await expect(panelEditPage.panel.data).toContainText(['host', 'user-agent']);
   });
 
+  // --- Query editor regression: crash fix + state isolation ---
+  // Before the fix, EditorContextProvider called useStorage() which returned null
+  // when StorageContextProvider was absent, causing a crash on any panel editor open.
+  // Also verifies state isolation: without no-op storage, navigating from panel 1 to
+  // panel 17 would restore panel 1's query from localStorage into panel 17's editor.
+
+  test('query editor renders and shows its own query when navigating between panels', async ({
+    gotoPanelEditPage,
+    page,
+  }) => {
+    // Open panel 1 first — seeds any localStorage state from the expected-headers query
+    await gotoPanelEditPage({ dashboard: { uid: DASHBOARD_UID }, id: '1' });
+
+    // Navigate to panel 17 (Header names)
+    await gotoPanelEditPage({ dashboard: { uid: DASHBOARD_UID }, id: '17' });
+
+    const queryEditor = page.locator('.graphiql-query-editor');
+    await expect(queryEditor).toBeVisible();
+    // Panel 17 uses "headerNames"; panel 1 uses "expectHeader" — must not bleed across
+    await expect(queryEditor).toContainText('headerNames');
+    await expect(queryEditor).not.toContainText('expectHeader');
+  });
+
   // --- Timeseries: Generated Processor Temperatures (panel 3) ---
 
   test('Generated Processor Temperatures timeseries renders data without errors', async ({
