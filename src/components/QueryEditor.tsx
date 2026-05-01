@@ -21,7 +21,7 @@ import {
   StorageContextProvider,
   useEditorContext,
 } from '@graphiql/react';
-import { DocExplorerContextProvider } from '@graphiql/plugin-doc-explorer';
+import { DOC_EXPLORER_PLUGIN, DocExplorerContextProvider } from '@graphiql/plugin-doc-explorer';
 import type { Fetcher, FetcherOpts, FetcherParams, Storage } from '@graphiql/toolkit';
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
@@ -144,7 +144,11 @@ export function QueryEditor(props: Props) {
               //   we want them to always have to choose which operation they want
             >
               <DocExplorerContextProvider> {/*Explorer context needed for documentation*/}
-                <PluginContextProvider>
+                <PluginContextProvider
+                  plugins={[DOC_EXPLORER_PLUGIN]}
+                  // If referencePlugin is not specified, clicking pop-ups in the query editor will not automatically open the documentation
+                  referencePlugin={DOC_EXPLORER_PLUGIN}
+                >
                   {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
                   <div className={isAlerting ? "hide-execute-button" : ""}>
                     <InnerQueryEditor
