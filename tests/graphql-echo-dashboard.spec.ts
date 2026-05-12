@@ -39,9 +39,7 @@ test.describe('GraphQL Echo dashboard', () => {
   // --- Table: Header names (panel 17) — tests explodeArrayPaths ---
   // Uses explodeArrayPaths: ["headerNames"] so each HTTP header name becomes its own row.
 
-  test('Header names query uses explodeArrayPaths to produce one row per header', async ({
-    gotoPanelEditPage,
-  }) => {
+  test('Header names query uses explodeArrayPaths to produce one row per header', async ({ gotoPanelEditPage }) => {
     const panelEditPage = await gotoPanelEditPage({
       dashboard: { uid: DASHBOARD_UID },
       id: '17',
@@ -92,9 +90,8 @@ test.describe('GraphQL Echo dashboard', () => {
 
   // --- Timeseries: Generated Processor Temperatures (panel 3) ---
 
-  test('Generated Processor Temperatures timeseries renders data without errors', async ({
-    gotoPanelEditPage,
-  }) => {
+  test('Generated Processor Temperatures timeseries renders data without errors', async ({ gotoPanelEditPage }) => {
+    test.slow(process.env.GRAFANA_VERSION === 'dev-preview-react19', 'testing if dev image is slower than stable releases.');
     const panelEditPage = await gotoPanelEditPage({
       dashboard: { uid: DASHBOARD_UID },
       id: '3',
