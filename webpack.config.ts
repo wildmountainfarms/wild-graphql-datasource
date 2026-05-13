@@ -1,5 +1,6 @@
 import type { Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
+import { IgnorePlugin } from 'webpack';
 import grafanaConfig from './.config/webpack/webpack.config';
 
 const config = async (env: Record<string, string>): Promise<Configuration> => {
@@ -18,6 +19,12 @@ const config = async (env: Record<string, string>): Promise<Configuration> => {
         },
       ],
     },
+    plugins: [
+      // @graphiql/toolkit dynamically imports graphql-ws only when a subscriptionUrl
+      // is configured. This plugin uses no WebSocket subscriptions, so the import is
+      // unreachable at runtime. Ignore it to suppress the spurious webpack warning.
+      new IgnorePlugin({ resourceRegExp: /^graphql-ws$/ }),
+    ],
   });
 };
 
