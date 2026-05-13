@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 1.6.0
+
+Updates to support Grafana 13. Upgraded GraphiQL dependency.
+
 ## 1.5.1
 
 Fixed regression within the query editor that occurred when constant labels were used.
