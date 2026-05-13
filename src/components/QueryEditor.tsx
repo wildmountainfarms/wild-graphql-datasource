@@ -16,22 +16,23 @@ import { GraphiQLInterface } from 'graphiql';
 import {
   EditorContextProvider,
   ExecutionContextProvider,
-  ExplorerContextProvider,
   PluginContextProvider,
   SchemaContextProvider,
+  StorageContextProvider,
   useEditorContext,
 } from '@graphiql/react';
-import { Fetcher } from '@graphiql/toolkit';
-import { FetcherOpts, FetcherParams } from '@graphiql/toolkit/src/create-fetcher/types';
+import { DOC_EXPLORER_PLUGIN, DocExplorerContextProvider } from '@graphiql/plugin-doc-explorer';
+import type { Fetcher, FetcherOpts, FetcherParams, Storage } from '@graphiql/toolkit';
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
 
-import 'graphiql/graphiql.css';
+import 'graphiql/style.css';
 import './modify_graphiql.css';
-import { ExecutionResult } from 'graphql-ws';
+import { ExecutionResult } from 'graphql';
+
 import { getInterpolatedAutoPopulatedVariables, interpolateVariables } from '../variables';
 
-type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
+export type Props = QueryEditorProps<DataSource, WildGraphQLAnyQuery, WildGraphQLDataSourceOptions>;
 interface InnerQueryProps {
   query: WildGraphQLAnyQuery
   onChange: (value: WildGraphQLAnyQuery) => void,
@@ -55,7 +56,7 @@ const INPUT_WIDTH = 48;
  * One key difference here is that it is expected that all variables populated automatically by the backend
  * are also automatically populated by this method, using
  */
-function createFetcher(url: string, withCredentials: boolean, basicAuth?: string): Fetcher  {
+function createFetcher(url: string, withCredentials: boolean, basicAuth?: string): Fetcher {
   const headers: Record<string, any> = {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -71,7 +72,7 @@ function createFetcher(url: string, withCredentials: boolean, basicAuth?: string
   return async (graphQLParams: FetcherParams, opts?: FetcherOpts) => {
     const variables = {
       ...getInterpolatedAutoPopulatedVariables(templateSrv),
-      ...interpolateVariables(graphQLParams.variables, templateSrv), // remember one of the downsides here is that we cannot pass scopedVars here because we don't have access to it
+      ...interpolateVariables(graphQLParams.variables ?? {}, templateSrv), // remember one of the downsides here is that we cannot pass scopedVars here because we don't have access to it
     };
     const query = {
       ...graphQLParams,
@@ -114,44 +115,59 @@ export function QueryEditor(props: Props) {
     ...(query as Partial<WildGraphQLAnyQuery>), // cast to partial to make compiler point out missing fields
   };
 
+   const noopStorage = useRef<Storage>({
+     getItem: () => null,
+     setItem: () => {},
+     removeItem: () => {},
+     clear: () => {},
+     length: 0,
+ }).current;
+
   return (
     <>
       {/*By not providing storage, history contexts, they won't be used*/}
-      {/*<StorageContextProvider storage={DummyStorage}>*/}
+      <StorageContextProvider storage={noopStorage}>
       {/*  <HistoryContextProvider maxHistoryLength={0}>*/}
-      <EditorContextProvider
-        // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
-        defaultTabs={[{
-          query: correctedQuery.queryText,
-          // NOTE: For some reason if you specify variable here, it just doesn't work...
-        }]}
-        variables={getQueryVariablesAsJsonString(query)}
-        // we don't need to pass onEditOperationName here because we have a callback that handles it ourselves
-      >
-        <SchemaContextProvider fetcher={fetcher}>
-          <ExecutionContextProvider
-            fetcher={fetcher}
-            // NOTE: We don't pass the operationName here because when the user presses the run button,
-            //   we want them to always have to choose which operation they want
-          >
-            <ExplorerContextProvider> {/*Explorer context needed for documentation*/}
-              <PluginContextProvider>
-                {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
-                <div className={isAlerting ? "hide-execute-button" : ""}>
-                  <InnerQueryEditor
-                    query={correctedQuery}
-                    onChange={props.onChange}
-                    app={props.app}
-                  />
-                </div>
-              </PluginContextProvider>
-            </ExplorerContextProvider>
-          </ExecutionContextProvider>
-        </SchemaContextProvider>
-      </EditorContextProvider>
+        <EditorContextProvider
+          // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
+          defaultTabs={[{
+            query: correctedQuery.queryText,
+            // NOTE: For some reason if you specify variable here, it just doesn't work...
+          }]}
+          variables={getQueryVariablesAsJsonString(query)}
+          // we don't need to pass onEditOperationName here because we have a callback that handles it ourselves
+        >
+          <SchemaContextProvider fetcher={fetcher}>
+            <ExecutionContextProvider
+              fetcher={fetcher}
+              // NOTE: We don't pass the operationName here because when the user presses the run button,
+              //   we want them to always have to choose which operation they want
+            >
+              <DocExplorerContextProvider> {/*Explorer context needed for documentation*/}
+                <PluginContextProvider
+                  plugins={[DOC_EXPLORER_PLUGIN]}
+                  // If referencePlugin is not specified, clicking pop-ups in the query editor will not automatically open the documentation
+                  referencePlugin={DOC_EXPLORER_PLUGIN}
+                >
+                  {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
+                  <div className={isAlerting ? "hide-execute-button" : ""}>
+                    <InnerQueryEditor
+                      query={correctedQuery}
+                      onChange={props.onChange}
+                      app={props.app}
+                    />
+                  </div>
+                </PluginContextProvider>
+              </DocExplorerContextProvider>
+            </ExecutionContextProvider>
+          </SchemaContextProvider>
+        </EditorContextProvider>
+      </StorageContextProvider>
     </>
   );
 }
+
+export default QueryEditor;
 
 function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   const isBackendOnlyQuery = app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting;
@@ -404,7 +420,6 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
     }
   }, [onChange, query, currentOperationName]);
 
-
   return (
     <>
       <h3 className="page-heading">Query</h3>
@@ -413,7 +428,6 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
           {/*TODO allow this to be resized*/}
           <GraphiQLInterface
             showPersistHeadersSettings={false}
-            disableTabs={true}
             isHeadersEditorEnabled={false} // TODO consider enabling customizable headers later
             onEditQuery={(value) => {
               onChange({...query, queryText: value});
