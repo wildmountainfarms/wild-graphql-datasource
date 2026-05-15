@@ -38,25 +38,25 @@ func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) 
 		case *jsonnode.Object:
 			newData = typedCurrentData.Get(part)
 			if newData == nil {
-				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %s does not exist! dataPath: %s", i, part, dataPath))
+				return nil, fmt.Errorf("part (index %d) of data path: %s does not exist! dataPath: %s", i, part, dataPath)
 			}
 		case *jsonnode.Array:
 			partAsInteger, err := strconv.Atoi(part)
 			if err != nil {
-				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %s should be an integer because the value before it was an array! dataPath: %s", i, part, dataPath))
+				return nil, fmt.Errorf("part (index %d) of data path: %s should be an integer because the value before it was an array! dataPath: %s", i, part, dataPath)
 			}
 			if partAsInteger < 0 {
-				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %d should be a non-negative integer! dataPath: %s", i, partAsInteger, dataPath))
+				return nil, fmt.Errorf("part (index %d) of data path: %d should be a non-negative integer! dataPath: %s", i, partAsInteger, dataPath)
 			}
 			if partAsInteger >= len(*typedCurrentData) {
-				return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %d must not fall out of bounds for array of length %d! dataPath: %s", i, partAsInteger, len(*typedCurrentData), dataPath))
+				return nil, fmt.Errorf("part (index %d) of data path: %d must not fall out of bounds for array of length %d! dataPath: %s", i, partAsInteger, len(*typedCurrentData), dataPath)
 			}
 			newData = (*typedCurrentData)[partAsInteger]
 			if newData == nil {
-				return nil, errors.New(fmt.Sprintf("(Internal error) Part (index %d) of data path resulted in retrieving nil (this should never happen)! dataPath: %s", i, dataPath))
+				return nil, fmt.Errorf("(Internal error) Part (index %d) of data path resulted in retrieving nil (this should never happen)! dataPath: %s", i, dataPath)
 			}
 		default:
-			return nil, errors.New(fmt.Sprintf("(Internal error) Part (index %d) of data path resulted in unexpected currentData type! dataPath: %s, currentData type: %v", i, dataPath, reflect.TypeOf(currentData)))
+			return nil, fmt.Errorf("(Internal error) Part (index %d) of data path resulted in unexpected currentData type! dataPath: %s, currentData type: %v", i, dataPath, reflect.TypeOf(currentData))
 		}
 		if newData == nil {
 			// We check whether newData is nil above, so this is just a sanity check and can never possibly occur
@@ -66,7 +66,7 @@ func getNodeFromDataPath(graphQlResponseData *jsonnode.Object, dataPath string) 
 		case *jsonnode.Object:
 		case *jsonnode.Array:
 		default:
-			return nil, errors.New(fmt.Sprintf("Part (index %d) of data path: %s is not an object or array! Type is %v! dataPath: %s", i, part, reflect.TypeOf(value), dataPath))
+			return nil, fmt.Errorf("part (index %d) of data path: %s is not an object or array! Type is %v! dataPath: %s", i, part, reflect.TypeOf(value), dataPath)
 		}
 		currentData = newData
 	}
@@ -85,10 +85,10 @@ func filterKeysForDataFrame(keys []string, fieldsExcludedFromDataFrame sets.Set[
 	return r
 }
 
-func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, error, ParseDataErrorType) {
+func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.ParsingOption) (data.Frames, ParseDataErrorType, error) {
 	finalData, err := getNodeFromDataPath(graphQlResponseData, parsingOption.DataPath)
 	if err != nil {
-		return nil, err, FRIENDLY_ERROR
+		return nil, FRIENDLY_ERROR, err
 	}
 
 	var dataArray []*jsonnode.Object
@@ -104,9 +104,9 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 				object.Put("value", element)
 				dataArray[i] = object
 			case *jsonnode.Array:
-				return nil, fmt.Errorf("one of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element)), FRIENDLY_ERROR
+				return nil, FRIENDLY_ERROR, fmt.Errorf("one of the elements inside the data array is not an object! element: %d is of type: %v", i, reflect.TypeOf(element))
 			default:
-				return nil, fmt.Errorf("unknown type for element within array. element: %d is of type: %v", i, reflect.TypeOf(element)), UNKNOWN_ERROR
+				return nil, UNKNOWN_ERROR, fmt.Errorf("unknown type for element within array. element: %d is of type: %v", i, reflect.TypeOf(element))
 			}
 		}
 	case *jsonnode.Object:
@@ -123,7 +123,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 			object,
 		}
 	default:
-		return nil, errors.New(fmt.Sprintf("Final part of data path: is not an array or object! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))), FRIENDLY_ERROR
+		return nil, FRIENDLY_ERROR, fmt.Errorf("final part of data path: is not an array or object! dataPath: %s type of result: %v", parsingOption.DataPath, reflect.TypeOf(value))
 	}
 
 	// We store a fieldMap inside of this frameMap.
@@ -143,7 +143,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 		for _, flatData := range flatDataExplodedArray {
 			labels, err := getLabelsFromFlatData(flatData, parsingOption)
 			if err != nil {
-				return nil, err, FRIENDLY_ERROR // getLabelsFromFlatData must always return a friendly error
+				return nil, FRIENDLY_ERROR, err // getLabelsFromFlatData must always return a friendly error
 			}
 			filteredKeys := filterKeysForDataFrame(flatData.Keys(), fieldsExcludedFromDataFrame)
 			row := fm.NewRow(labels)
@@ -162,13 +162,13 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 						//   and also consider using time.RFC339Nano instead
 						parsedTime, err := time.Parse(time.RFC3339, typedValue.String())
 						if err != nil {
-							return nil, errors.New(fmt.Sprintf("Time could not be parsed! Time: %s", typedValue)), FRIENDLY_ERROR
+							return nil, FRIENDLY_ERROR, fmt.Errorf("time could not be parsed! Time: %s", typedValue)
 						}
 						timePointer = &parsedTime
 					case jsonnode.Number:
 						epochMillis, err := typedValue.Int64()
 						if err != nil {
-							return nil, err, UNKNOWN_ERROR
+							return nil, UNKNOWN_ERROR, err
 						}
 						t := time.UnixMilli(epochMillis)
 						timePointer = &t
@@ -176,7 +176,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 						timePointer = nil
 					default:
 						// This case should never happen because we never expect other types to pop up here
-						return nil, errors.New(fmt.Sprintf("Unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))), FRIENDLY_ERROR
+						return nil, FRIENDLY_ERROR, fmt.Errorf("unsupported time type! Time: %s type: %v", typedValue, reflect.TypeOf(typedValue))
 					}
 					if timePointer == nil {
 						row.FieldMap[key] = jsonnode.NULL
@@ -192,7 +192,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					case jsonnode.Number:
 						parsedValue, err := typedValue.Float64()
 						if err != nil {
-							return nil, errors.New(fmt.Sprintf("Could not parse number: %s", typedValue.String())), UNKNOWN_ERROR
+							return nil, UNKNOWN_ERROR, fmt.Errorf("could not parse number: %s", typedValue.String())
 						}
 						row.FieldMap[key] = parsedValue
 						// NOTE: We are allowed to store a jsonnode.Number type directly into the FieldMap (it's part of the contract to support that),
@@ -200,7 +200,7 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 					case jsonnode.Null:
 						row.FieldMap[key] = typedValue
 					default:
-						return nil, errors.New(fmt.Sprintf("Unsupported type! type: %v", reflect.TypeOf(typedValue))), UNKNOWN_ERROR
+						return nil, UNKNOWN_ERROR, fmt.Errorf("unsupported type! type: %v", reflect.TypeOf(typedValue))
 					}
 				}
 			}
@@ -209,9 +209,9 @@ func ParseData(graphQlResponseData *jsonnode.Object, parsingOption querymodel.Pa
 
 	frames, err := fm.ToFrames()
 	if err != nil {
-		return nil, err, UNKNOWN_ERROR
+		return nil, UNKNOWN_ERROR, err
 	}
-	return frames, nil, NO_ERROR
+	return frames, NO_ERROR, nil
 }
 
 // Given flatData and label options, computes the labels or returns a friendly error
@@ -226,7 +226,7 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 			if fieldValue == nil {
 				fieldConfig := labelOption.FieldConfig
 				if fieldConfig != nil && fieldConfig.Required {
-					return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value))
+					return nil, fmt.Errorf("label option: %s could not be satisfied as key %s does not exist", labelOption.Name, labelOption.Value)
 				} else if fieldConfig != nil && fieldConfig.DefaultValue != nil {
 					labels[labelOption.Name] = *fieldConfig.DefaultValue
 				}
@@ -239,7 +239,7 @@ func getLabelsFromFlatData(flatData *jsonnode.Object, parsingOption querymodel.P
 					// TODO decide if we want to "normalize" when converting to string -- should 5.0 and 5 be the same string value?
 					labels[labelOption.Name] = typedFieldValue.String()
 				default:
-					return nil, errors.New(fmt.Sprintf("Label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue)))
+					return nil, fmt.Errorf("label option: %s could not be satisfied as key %s is not a string. It's type is %v", labelOption.Name, labelOption.Value, reflect.TypeOf(typedFieldValue))
 				}
 			}
 		}

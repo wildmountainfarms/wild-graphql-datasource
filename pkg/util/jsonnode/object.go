@@ -3,7 +3,6 @@ package jsonnode
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -46,7 +45,7 @@ func (o *Object) DeepCopy() Node {
 
 func (o *Object) decodeJSON(startToken json.Token, decoder *json.Decoder) error {
 	if startToken != json.Delim('{') {
-		return errors.New(fmt.Sprintf("Token is not the start of an object! Token: %v", startToken))
+		return fmt.Errorf("token is not the start of an object! Token: %v", startToken)
 	}
 	for {
 		keyToken, err := decoder.Token()
@@ -61,7 +60,7 @@ func (o *Object) decodeJSON(startToken json.Token, decoder *json.Decoder) error 
 		case string:
 			key = typedToken
 		default:
-			return errors.New(fmt.Sprintf("invalid token for key to object. token: %v", keyToken))
+			return fmt.Errorf("invalid token for key to object. token: %v", keyToken)
 		}
 
 		token, err := decoder.Token()
@@ -88,7 +87,7 @@ func (o *Object) UnmarshalJSON(data []byte) error {
 	return o.decodeJSON(token, d)
 }
 
-func (_ *Object) sealed() {}
+func (*Object) sealed() {}
 
 func (o *Object) String() string {
 	var result []string

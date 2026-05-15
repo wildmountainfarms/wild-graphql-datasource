@@ -3,7 +3,6 @@ package jsonnode
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -15,7 +14,7 @@ func NewArray() *Array {
 	return &array
 }
 
-func (_ *Array) sealed() {}
+func (*Array) sealed() {}
 
 func (a *Array) Clone() *Array {
 	copiedArray := make(Array, len(*a))
@@ -56,7 +55,7 @@ func (a *Array) Marshal() ([]byte, error) {
 
 func (a *Array) decodeJSON(startToken json.Token, decoder *json.Decoder) error {
 	if startToken != json.Delim('[') {
-		return errors.New(fmt.Sprintf("Token is not the start of an array! Token: %v", startToken))
+		return fmt.Errorf("token is not the start of an array! Token: %v", startToken)
 	}
 	for { // inside the array
 		token, err := decoder.Token()

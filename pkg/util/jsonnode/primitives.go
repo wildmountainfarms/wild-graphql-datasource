@@ -8,7 +8,7 @@ import (
 
 type Number json.Number
 
-func (_ Number) sealed() {}
+func (Number) sealed() {}
 func (n Number) DeepCopy() Node {
 	return n
 }
@@ -62,7 +62,7 @@ func (b Boolean) Bool() bool {
 
 type String string
 
-func (_ String) sealed() {}
+func (String) sealed() {}
 
 func (s String) DeepCopy() Node {
 	return s
@@ -85,7 +85,7 @@ type Null bool
 
 const NULL Null = false
 
-func (_ Null) sealed() {}
+func (Null) sealed() {}
 
 func (n Null) DeepCopy() Node {
 	return n
