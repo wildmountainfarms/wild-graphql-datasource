@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.6.1
+
+Continued updates for Grafana 13 / React 19.
+No real changes since 1.6.0 other than fixing plugin signing.
 
 ## 1.6.0
 
