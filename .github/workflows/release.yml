@@ -11,6 +11,7 @@ permissions: read-all
 
 jobs:
   release:
+    environment: signing
     permissions:
       contents: write
       id-token: write
