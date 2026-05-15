@@ -7,6 +7,11 @@ const config = async (env: Record<string, string>): Promise<Configuration> => {
   const baseConfig = await grafanaConfig(env);
 
   return merge(baseConfig, {
+    // Ensure react/jsx-runtime is never bundled by transitive dependencies.
+    // Required for React 19 compatibility: these modules were renamed and
+    // bundling them causes breakage with Grafana >= 12.3.0 / React 19.
+    // See: https://grafana.com/blog/react-19-is-coming-to-grafana-what-plugin-developers-need-to-know/
+    externals: ['react/jsx-runtime', 'react/jsx-dev-runtime'],
     module: {
       rules: [
         // graphiql v5 (and @graphiql/react) declare sideEffects without listing
