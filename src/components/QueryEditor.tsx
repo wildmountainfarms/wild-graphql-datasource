@@ -14,18 +14,16 @@ import {
 } from '../types';
 import { GraphiQLInterface } from 'graphiql';
 import {
-  EditorContextProvider,
-  ExecutionContextProvider,
-  PluginContextProvider,
-  SchemaContextProvider,
-  StorageContextProvider,
-  useEditorContext,
+  GraphiQLProvider,
+  useGraphiQL,
+  useGraphiQLActions,
 } from '@graphiql/react';
-import { DOC_EXPLORER_PLUGIN, DocExplorerContextProvider } from '@graphiql/plugin-doc-explorer';
+import { DOC_EXPLORER_PLUGIN, DocExplorerStore } from '@graphiql/plugin-doc-explorer';
 import type { Fetcher, FetcherOpts, FetcherParams, Storage } from '@graphiql/toolkit';
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
 
+import 'graphiql/setup-workers/webpack';
 import 'graphiql/style.css';
 import './modify_graphiql.css';
 import { ExecutionResult } from 'graphql';
@@ -124,46 +122,25 @@ export function QueryEditor(props: Props) {
  }).current;
 
   return (
-    <>
-      {/*By not providing storage, history contexts, they won't be used*/}
-      <StorageContextProvider storage={noopStorage}>
-      {/*  <HistoryContextProvider maxHistoryLength={0}>*/}
-        <EditorContextProvider
-          // defaultQuery is the query that is used for new tabs, but we already define the open tabs here
-          defaultTabs={[{
-            query: correctedQuery.queryText,
-            // NOTE: For some reason if you specify variable here, it just doesn't work...
-          }]}
-          variables={getQueryVariablesAsJsonString(query)}
-          // we don't need to pass onEditOperationName here because we have a callback that handles it ourselves
-        >
-          <SchemaContextProvider fetcher={fetcher}>
-            <ExecutionContextProvider
-              fetcher={fetcher}
-              // NOTE: We don't pass the operationName here because when the user presses the run button,
-              //   we want them to always have to choose which operation they want
-            >
-              <DocExplorerContextProvider> {/*Explorer context needed for documentation*/}
-                <PluginContextProvider
-                  plugins={[DOC_EXPLORER_PLUGIN]}
-                  // If referencePlugin is not specified, clicking pop-ups in the query editor will not automatically open the documentation
-                  referencePlugin={DOC_EXPLORER_PLUGIN}
-                >
-                  {/*We need to hide the execute button and response window during alerting because the to and from variables are not populated correctly*/}
-                  <div className={isAlerting ? "hide-execute-button" : ""}>
-                    <InnerQueryEditor
-                      query={correctedQuery}
-                      onChange={props.onChange}
-                      app={props.app}
-                    />
-                  </div>
-                </PluginContextProvider>
-              </DocExplorerContextProvider>
-            </ExecutionContextProvider>
-          </SchemaContextProvider>
-        </EditorContextProvider>
-      </StorageContextProvider>
-    </>
+    <GraphiQLProvider
+      storage={noopStorage}
+      fetcher={fetcher}
+      initialQuery={correctedQuery.queryText}
+      initialVariables={getQueryVariablesAsJsonString(correctedQuery)}
+      plugins={[DOC_EXPLORER_PLUGIN]}
+      referencePlugin={DOC_EXPLORER_PLUGIN}
+    >
+      <DocExplorerStore>
+        {/* Hide execution during alerting because the to and from variables are not populated correctly. */}
+        <div className={isAlerting ? "hide-execute-button" : ""}>
+          <InnerQueryEditor
+            query={correctedQuery}
+            onChange={props.onChange}
+            app={props.app}
+          />
+        </div>
+      </DocExplorerStore>
+    </GraphiQLProvider>
   );
 }
 
@@ -171,20 +148,13 @@ export default QueryEditor;
 
 function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   const isBackendOnlyQuery = app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting;
-  const editorContext = useEditorContext();
+  const currentOperationName = useGraphiQL((state) => state.operationName);
+  const { setOperationName } = useGraphiQLActions();
   const labelToAddRef = useRef<HTMLInputElement>(null);
 
   const onOperationNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newOperationName = event.target.value || undefined;
-    const queryEditor = editorContext?.queryEditor;
-    if (queryEditor) {
-      // We don't use editorContext.setOperationName because that function does not accept null values for some reason
-      // Note to future me - if you need to look at the source of setOperationName, search everywhere for `'setOperationName'` in the graphiql codebase
-      // NOTE: I'm not sure if setting this value actually does anything
-      queryEditor.operationName = newOperationName ?? null;
-    }
-    // by updating the active tab values, we are able to switch the "active operation" to whatever the user has just typed out
-    editorContext?.updateActiveTabValues({operationName: newOperationName})
+    setOperationName(newOperationName ?? "");
     onChange({ ...query, operationName: newOperationName });
   };
 
@@ -404,10 +374,8 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   //   });
   // };
 
-  const currentOperationName = editorContext?.queryEditor?.operationName;
   useEffect(() => {
     // if currentOperationName is null, that means that the query is unnamed
-    // currentOperationName should never be undefined unless queryEditor is undefined
     // Treat an empty, null, or undefined operation name the same.
     //   We need to do this because otherwise we are constantly doing onChange calls, which results in 100% CPU utilization
     if (
@@ -427,6 +395,7 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
         <div className="gf-form" style={{height: "450px"}}>
           {/*TODO allow this to be resized*/}
           <GraphiQLInterface
+            className="wild-graphql-query-editor"
             showPersistHeadersSettings={false}
             isHeadersEditorEnabled={false} // TODO consider enabling customizable headers later
             onEditQuery={(value) => {
