@@ -1,33 +1,44 @@
-import type { Configuration } from 'webpack';
+import { IgnorePlugin, type Configuration } from 'webpack';
 import { merge } from 'webpack-merge';
-import { IgnorePlugin } from 'webpack';
 import grafanaConfig from './.config/webpack/webpack.config';
 
 const config = async (env: Record<string, string>): Promise<Configuration> => {
   const baseConfig = await grafanaConfig(env);
 
+  // Only plugin entries use AMD; native workers must run without an AMD loader.
+  const pluginEntries = baseConfig.entry as Record<string, string>;
+  baseConfig.entry = Object.fromEntries(
+    Object.entries(pluginEntries).map(([name, entry]) => [
+      name,
+      { import: entry, library: { type: 'amd' } },
+    ])
+  );
+  baseConfig.output = {
+    ...baseConfig.output,
+    library: undefined,
+    enabledLibraryTypes: ['amd'],
+    // Resolve worker chunks relative to their script URL, including Grafana subpaths.
+    publicPath: 'auto',
+  };
+
   return merge(baseConfig, {
-    // Ensure react/jsx-runtime is never bundled by transitive dependencies.
-    // Required for React 19 compatibility: these modules were renamed and
-    // bundling them causes breakage with Grafana >= 12.3.0 / React 19.
-    // See: https://grafana.com/blog/react-19-is-coming-to-grafana-what-plugin-developers-need-to-know/
-    externals: ['react/jsx-runtime', 'react/jsx-dev-runtime'],
+    // Entry-level AMD no longer implies AMD externals; Grafana still supplies them.
+    externalsType: 'amd',
     module: {
       rules: [
-        // graphiql v5 (and @graphiql/react) declare sideEffects without listing
-        // CSS files, causing webpack to tree-shake their CSS imports. This rule
-        // forces all CSS modules to be treated as having side effects.
-        // Fixed in https://github.com/graphql/graphiql/pull/4211 but no release yet.
+        // Keep dependency fonts inside dist; the development default [file]
+        // preserves ../node_modules and produces URLs outside the plugin directory.
         {
-          test: /\.css$/,
-          sideEffects: true,
+          test: /\.(woff|woff2|eot|ttf|otf)(\?v=\d+\.\d+\.\d+)?$/,
+          type: 'asset/resource',
+          generator: {
+            filename: 'fonts/[name].[contenthash][ext]',
+          },
         },
       ],
     },
     plugins: [
-      // @graphiql/toolkit dynamically imports graphql-ws only when a subscriptionUrl
-      // is configured. This plugin uses no WebSocket subscriptions, so the import is
-      // unreachable at runtime. Ignore it to suppress the spurious webpack warning.
+      // GraphiQL's optional WebSocket transport is unused by our HTTP fetcher.
       new IgnorePlugin({ resourceRegExp: /^graphql-ws$/ }),
     ],
   });

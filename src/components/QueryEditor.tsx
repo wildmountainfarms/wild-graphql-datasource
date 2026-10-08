@@ -1,4 +1,4 @@
-import React, { ChangeEvent, KeyboardEvent, useEffect, useMemo, useRef } from 'react';
+import React, { ChangeEvent, KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { Button, Checkbox, Combobox, IconButton, InlineField, Input, TextArea } from '@grafana/ui';
 import { CoreApp, QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
@@ -23,7 +23,7 @@ import type { Fetcher, FetcherOpts, FetcherParams, Storage } from '@graphiql/too
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
 
-import 'graphiql/setup-workers/webpack';
+import '../monacoWorkers';
 import 'graphiql/style.css';
 import './modify_graphiql.css';
 import { ExecutionResult } from 'graphql';
@@ -149,8 +149,24 @@ export default QueryEditor;
 function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   const isBackendOnlyQuery = app === CoreApp.CloudAlerting || app === CoreApp.UnifiedAlerting;
   const currentOperationName = useGraphiQL((state) => state.operationName);
+  const hasParsedOperations = useGraphiQL((state) => state.operations !== undefined);
   const { setOperationName } = useGraphiQLActions();
   const labelToAddRef = useRef<HTMLInputElement>(null);
+
+  // GraphiQL 5 registers its query-change listener when Monaco initializes and
+  //   retains that render's onEditQuery callback.
+  //   Spreading the captured query can overwrite newer fields, including operationName.
+  //   Read the latest committed props through a ref so even the retained callback uses current values.
+  //   Upstream should refresh the onEdit listener when the callback changes,
+  //   separately from editor creation, or forward calls to the latest callback.
+  const latestQueryPropsRef = useRef({ query, onChange });
+  useLayoutEffect(() => {
+    latestQueryPropsRef.current = { query, onChange };
+  }, [query, onChange]);
+  const onEditQuery = useCallback((value: string) => {
+    const latest = latestQueryPropsRef.current;
+    latest.onChange({ ...latest.query, queryText: value });
+  }, []);
 
   const onOperationNameChange = (event: ChangeEvent<HTMLInputElement>) => {
     const newOperationName = event.target.value || undefined;
@@ -379,14 +395,14 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
     // Treat an empty, null, or undefined operation name the same.
     //   We need to do this because otherwise we are constantly doing onChange calls, which results in 100% CPU utilization
     if (
-      currentOperationName !== undefined
+      hasParsedOperations
       && (query.operationName || undefined) !== (currentOperationName || undefined)
     ) {
       // Remember that in our world, we use the string | undefined type for operationName,
       //   so we're basically converting null to undefined here
       onChange({ ...query, operationName: currentOperationName || undefined });
     }
-  }, [onChange, query, currentOperationName]);
+  }, [onChange, query, currentOperationName, hasParsedOperations]);
 
   return (
     <>
@@ -398,9 +414,7 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
             className="wild-graphql-query-editor"
             showPersistHeadersSettings={false}
             isHeadersEditorEnabled={false} // TODO consider enabling customizable headers later
-            onEditQuery={(value) => {
-              onChange({...query, queryText: value});
-            }}
+            onEditQuery={onEditQuery}
             onEditVariables={(variablesJsonString) => {
               if (variablesJsonString.trimStart()) {
                 onChange({...query, variables: variablesJsonString});
