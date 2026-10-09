@@ -138,6 +138,40 @@ test.describe('GraphQL Echo dashboard', () => {
     await expect(container).toHaveCSS('height', '450px');
   });
 
+  test('Escape closes GraphiQL popups without leaving the panel editor', async ({ gotoPanelEditPage, page }) => {
+    await gotoPanelEditPage({ dashboard: { uid: DASHBOARD_UID }, id: '17' });
+    const editor = page.locator('.graphiql-query-editor');
+    const expand = page.getByRole('button', { name: 'Expand editor', exact: true });
+    const expandedEditor = page.getByRole('dialog', { name: 'Query editor', exact: true });
+
+    for (const expanded of [false, true]) {
+      for (const name of ['Open settings dialog', 'Open short keys dialog']) {
+        if (expanded) {
+          await expand.click();
+        }
+        await page.getByRole('button', { name, exact: true }).click();
+        const popup = page.locator('.graphiql-dialog');
+        await expect(popup).toBeVisible();
+        await page.keyboard.press('Escape');
+        await expect(popup).not.toBeVisible();
+        await expect(editor).toBeVisible();
+        if (expanded) {
+          await expect(expandedEditor).toBeVisible();
+          // Do not manually restore focus: GraphiQL may leave it on the body.
+          await page.keyboard.press('Escape');
+          await expect(expandedEditor).not.toBeVisible();
+          await expect(expand).toBeFocused();
+          await expect(editor).toBeVisible();
+          await expect(page).toHaveURL(/editPanel=17/);
+        }
+      }
+    }
+
+    // Grafana's normal Escape shortcut still works outside the popups.
+    await page.keyboard.press('Escape');
+    await expect(editor).not.toBeVisible();
+  });
+
   // --- Timeseries: Generated Processor Temperatures (panel 3) ---
 
   test('Generated Processor Temperatures timeseries renders data without errors', async ({ gotoPanelEditPage }) => {

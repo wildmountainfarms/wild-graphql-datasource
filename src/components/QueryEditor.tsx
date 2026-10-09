@@ -157,6 +157,30 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   const [isEditorExpanded, setEditorExpanded] = useState(false);
 
   useEffect(() => {
+    const containEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key !== 'Escape' || !(event.target instanceof Element)) {
+        return;
+      }
+      if (event.target.closest('.graphiql-dialog, .graphiql-dropdown-content')) {
+        // Radix also listens on document in the capture phase. Let its listener
+        // dismiss the popup, but stop Escape before Grafana's bubbling shortcut.
+        // React handlers run too late: Radix can already have unmounted the popup.
+        event.stopPropagation();
+        return;
+      }
+      if (isEditorExpanded && !editorDialogRef.current?.contains(event.target)) {
+        // Closing a GraphiQL popup can leave focus on document.body without a
+        // focusin event. Escape must still close the expanded editor first.
+        event.stopPropagation();
+        event.preventDefault();
+        setEditorExpanded(false);
+      }
+    };
+    document.addEventListener('keydown', containEscape, true);
+    return () => document.removeEventListener('keydown', containEscape, true);
+  }, [isEditorExpanded]);
+
+  useEffect(() => {
     if (!isEditorExpanded) {
       return;
     }
