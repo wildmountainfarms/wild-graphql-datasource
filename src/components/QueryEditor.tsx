@@ -19,12 +19,14 @@ import {
   useGraphiQLActions,
 } from '@graphiql/react';
 import { DOC_EXPLORER_PLUGIN, DocExplorerStore } from '@graphiql/plugin-doc-explorer';
+import { explorerPlugin } from '@graphiql/plugin-explorer';
 import type { Fetcher, FetcherOpts, FetcherParams, Storage } from '@graphiql/toolkit';
 import { getBackendSrv, getTemplateSrv } from '@grafana/runtime';
 import { firstValueFrom } from 'rxjs';
 
 import '../monacoWorkers';
 import 'graphiql/style.css';
+import '@graphiql/plugin-explorer/style.css';
 import './modify_graphiql.css';
 import { ExecutionResult } from 'graphql';
 
@@ -120,6 +122,7 @@ export function QueryEditor(props: Props) {
     clear: () => {},
     length: 0,
   }), []);
+  const plugins = useMemo(() => [DOC_EXPLORER_PLUGIN, explorerPlugin()], []);
 
   return (
     <GraphiQLProvider
@@ -127,7 +130,7 @@ export function QueryEditor(props: Props) {
       fetcher={fetcher}
       initialQuery={correctedQuery.queryText}
       initialVariables={getQueryVariablesAsJsonString(correctedQuery)}
-      plugins={[DOC_EXPLORER_PLUGIN]}
+      plugins={plugins}
       referencePlugin={DOC_EXPLORER_PLUGIN}
     >
       <DocExplorerStore>
