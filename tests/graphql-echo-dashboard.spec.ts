@@ -88,6 +88,56 @@ test.describe('GraphQL Echo dashboard', () => {
     await expect(queryEditor).not.toContainText('expectHeader');
   });
 
+  test('expanded query editor preserves undo history and inline size', async ({ gotoPanelEditPage, page }) => {
+    await gotoPanelEditPage({ dashboard: { uid: DASHBOARD_UID }, id: '17' });
+
+    const editor = page.locator('.graphiql-query-editor');
+    const input = editor.locator('textarea');
+    const container = page.locator('.wild-graphql-editor-container');
+    const expand = page.getByRole('button', { name: 'Expand editor', exact: true });
+    const close = page.getByRole('button', { name: 'Close expanded editor', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Query editor', exact: true });
+
+    await input.focus();
+    await page.keyboard.press('ControlOrMeta+End');
+    await page.keyboard.insertText('\n# inlineUndoMarker');
+    await expect(editor).toContainText('inlineUndoMarker');
+    await expand.click();
+    await expect(dialog).toBeVisible();
+    // GraphiQL's own dialogs render through portals outside the expanded editor.
+    await page.getByRole('button', { name: 'Open settings dialog', exact: true }).click();
+    const settings = page.getByRole('dialog', { name: 'Settings', exact: true });
+    await expect(settings).toBeVisible();
+    await settings.getByRole('button', { name: 'Close dialog' }).click();
+    await expect(settings).not.toBeVisible();
+    await expect(dialog).toBeVisible();
+    await input.focus();
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(editor).not.toContainText('inlineUndoMarker');
+
+    await page.keyboard.press('ControlOrMeta+End');
+    await page.keyboard.insertText('\n# expandedUndoMarker');
+    await expect(editor).toContainText('expandedUndoMarker');
+    await close.click();
+    await expect(expand).toBeFocused();
+    await expect(editor).toContainText('expandedUndoMarker');
+    await input.focus();
+    await page.keyboard.press('ControlOrMeta+z');
+    await expect(editor).not.toContainText('expandedUndoMarker');
+
+    // Native resizing writes an inline height. It should survive a modal round trip.
+    await container.evaluate((element) => { element.style.height = '600px'; });
+    await expect(container).toHaveCSS('height', '600px');
+    await expand.click();
+    // Wrap focus backwards into the editor before dismissing it with the keyboard.
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Escape');
+    await expect(expand).toBeFocused();
+    await expect(container).toHaveCSS('height', '600px');
+    await container.evaluate((element) => { element.style.height = '200px'; });
+    await expect(container).toHaveCSS('height', '450px');
+  });
+
   // --- Timeseries: Generated Processor Temperatures (panel 3) ---
 
   test('Generated Processor Temperatures timeseries renders data without errors', async ({ gotoPanelEditPage }) => {

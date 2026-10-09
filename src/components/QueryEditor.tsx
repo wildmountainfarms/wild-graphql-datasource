@@ -1,5 +1,5 @@
-import React, { ChangeEvent, KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
-import { Button, Checkbox, Combobox, IconButton, InlineField, Input, TextArea } from '@grafana/ui';
+import React, { ChangeEvent, KeyboardEvent, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Button, Checkbox, Combobox, IconButton, InlineField, Input, TextArea, useTheme2 } from '@grafana/ui';
 import { CoreApp, QueryEditorProps } from '@grafana/data';
 import { DataSource } from '../datasource';
 import {
@@ -152,6 +152,52 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
   const hasParsedOperations = useGraphiQL((state) => state.operations !== undefined);
   const { setOperationName } = useGraphiQLActions();
   const labelToAddRef = useRef<HTMLInputElement>(null);
+  const theme = useTheme2();
+  const editorDialogRef = useRef<HTMLDivElement>(null);
+  const [isEditorExpanded, setEditorExpanded] = useState(false);
+
+  useEffect(() => {
+    if (!isEditorExpanded) {
+      return;
+    }
+
+    const dialog = editorDialogRef.current!;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    let tabBackwards = false;
+    const focusableElements = () => Array.from(dialog.querySelectorAll<HTMLElement>(
+      'button, input, textarea, select, a[href], [tabindex]'
+    )).filter((element) => element.tabIndex >= 0 && !element.matches(':disabled') && element.getClientRects().length > 0);
+    const rememberTabDirection = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Tab') {
+        tabBackwards = event.shiftKey;
+      }
+    };
+    const containFocus = (event: FocusEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element) || dialog.contains(target)) {
+        return;
+      }
+      // GraphiQL renders these controls in portals outside the editor's DOM tree.
+      if (target.closest('.graphiql-dialog, .graphiql-dropdown-content')) {
+        return;
+      }
+      const elements = focusableElements();
+      (tabBackwards ? elements[elements.length - 1] : elements[0])?.focus();
+    };
+    document.body.style.overflow = 'hidden';
+    document.body.classList.add('wild-graphql-editor-expanded');
+    document.addEventListener('keydown', rememberTabDirection, true);
+    document.addEventListener('focusin', containFocus);
+    focusableElements()[0]?.focus();
+    return () => {
+      document.removeEventListener('keydown', rememberTabDirection, true);
+      document.removeEventListener('focusin', containFocus);
+      document.body.classList.remove('wild-graphql-editor-expanded');
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
+    };
+  }, [isEditorExpanded]);
 
   // GraphiQL 5 registers its query-change listener when Monaco initializes and
   //   retains that render's onEditQuery callback.
@@ -408,20 +454,54 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
     <>
       <h3 className="page-heading">Query</h3>
       <div className="gf-form-group">
-        <div className="gf-form" style={{height: "450px", minHeight: "450px", resize: "vertical", overflow: "hidden"}}>
-          <GraphiQLInterface
-            className="wild-graphql-query-editor"
-            showPersistHeadersSettings={false}
-            isHeadersEditorEnabled={false} // TODO consider enabling customizable headers later
-            onEditQuery={onEditQuery}
-            onEditVariables={(variablesJsonString) => {
-              if (variablesJsonString.trimStart()) {
-                onChange({...query, variables: variablesJsonString});
-              } else {
-                onChange({...query, variables: undefined});
+        {isEditorExpanded && <div
+          className="wild-graphql-editor-backdrop"
+          aria-hidden="true"
+          onClick={() => setEditorExpanded(false)}
+        />}
+        <div
+          ref={editorDialogRef}
+          className={`wild-graphql-editor-dialog${isEditorExpanded ? " is-expanded" : ""}`}
+          style={{ background: theme.colors.background.primary }}
+          role={isEditorExpanded ? 'dialog' : 'presentation'}
+          aria-label={isEditorExpanded ? 'Query editor' : undefined}
+          aria-modal={isEditorExpanded || undefined}
+          onKeyDown={(event) => {
+            if (isEditorExpanded && event.key === 'Escape' && event.currentTarget.contains(event.target as Node)) {
+              // Monaco gets first chance to dismiss suggestions. Keep Escape
+              // from also triggering Grafana's shortcut to leave the panel editor.
+              event.stopPropagation();
+              if (!event.defaultPrevented) {
+                event.preventDefault();
+                setEditorExpanded(false);
               }
-            }}
-          />
+            }
+          }}
+        >
+          <div className="wild-graphql-editor-toolbar">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setEditorExpanded(!isEditorExpanded)}
+            >
+              {isEditorExpanded ? 'Close expanded editor' : 'Expand editor'}
+            </Button>
+          </div>
+          <div className="gf-form wild-graphql-editor-container">
+            <GraphiQLInterface
+              className="wild-graphql-query-editor"
+              showPersistHeadersSettings={false}
+              isHeadersEditorEnabled={false} // TODO consider enabling customizable headers later
+              onEditQuery={onEditQuery}
+              onEditVariables={(variablesJsonString) => {
+                if (variablesJsonString.trimStart()) {
+                  onChange({...query, variables: variablesJsonString});
+                } else {
+                  onChange({...query, variables: undefined});
+                }
+              }}
+            />
+          </div>
         </div>
         <div className="gf-form-inline">
           <InlineField label="Operation Name" labelWidth={LABEL_WIDTH}
