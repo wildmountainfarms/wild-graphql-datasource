@@ -408,8 +408,7 @@ function InnerQueryEditor({ query, onChange, app }: InnerQueryProps) {
     <>
       <h3 className="page-heading">Query</h3>
       <div className="gf-form-group">
-        <div className="gf-form" style={{height: "450px"}}>
-          {/*TODO allow this to be resized*/}
+        <div className="gf-form" style={{height: "450px", minHeight: "450px", resize: "vertical", overflow: "hidden"}}>
           <GraphiQLInterface
             className="wild-graphql-query-editor"
             showPersistHeadersSettings={false}
