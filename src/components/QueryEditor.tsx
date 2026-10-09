@@ -113,13 +113,13 @@ export function QueryEditor(props: Props) {
     ...(query as Partial<WildGraphQLAnyQuery>), // cast to partial to make compiler point out missing fields
   };
 
-   const noopStorage = useRef<Storage>({
-     getItem: () => null,
-     setItem: () => {},
-     removeItem: () => {},
-     clear: () => {},
-     length: 0,
- }).current;
+  const noopStorage = useMemo<Storage>(() => ({
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+    clear: () => {},
+    length: 0,
+  }), []);
 
   return (
     <GraphiQLProvider

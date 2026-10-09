@@ -111,6 +111,8 @@ export type WildGraphQLAnyQuery = (WildGraphQLMainQuery | WildGraphQLAnnotationQ
  * These are options configured for each DataSource instance
  */
 export interface WildGraphQLDataSourceOptions extends DataSourceJsonData {
+  keepCookies?: string[];
+  timeout?: number;
 }
 
 /**
