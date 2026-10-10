@@ -1,0 +1,6 @@
+# Temporary exception for an advisory with no published patched version.
+# Reassess dependency exposure and upstream status before expiry.
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+ignoreUntil = 2026-11-10T00:00:00Z
+reason = "Temporary acceptance of the unresolved braces advisory; no patched release exists. Reassess dependency exposure and upstream status before expiry."
