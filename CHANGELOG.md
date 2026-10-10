@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.7.0
+
+* Fix: [#28](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/28) fixed GraphiQL query editor visibility when editing an alert rule
+* Feature: [#20](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/20) update to GraphiQL version
+* Feature: resizable GraphiQL editor
+* Feature: added "expand editor" button allowing an almost full screen GraphiQL editing experience
+* Data source configuration changes relating to [Migrating from DataSourceHttpSettings component](https://github.com/grafana/plugin-ui/blob/091fdf91af0ac48e138be9eed0e02e0fcefb5517/src/components/ConfigEditor/migrating-from-datasource-http-settings.md)
+* Technical: many dependency updates (as always)
+
 ## 1.6.1
 
 Continued updates for Grafana 13 / React 19.
