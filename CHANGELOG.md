@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.7.1
+
+* Security: upgrade the Go toolchain to 1.27.3 and update Go dependencies to address reported vulnerabilities
+
 ## 1.7.0
 
 * Fix: [#28](https://github.com/wildmountainfarms/wild-graphql-datasource/issues/28) fixed GraphiQL query editor visibility when editing an alert rule
