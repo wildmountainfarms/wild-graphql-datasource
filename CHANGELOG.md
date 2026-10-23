@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.7.2
+
+This release contains only dependency changes.
+* Decrease required Go version to 1.27.2 so that Grafana's internal validator can function
+
 ## 1.7.1
 
 This release contains only dependency updates.
