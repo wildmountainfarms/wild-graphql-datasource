@@ -4,3 +4,16 @@
 id = "GHSA-vfj7-8cjw-p6xm"
 ignoreUntil = 2026-11-10T00:00:00Z
 reason = "Temporary acceptance of the unresolved braces advisory; no patched release exists. Reassess dependency exposure and upstream status before expiry."
+
+# React Router is pulled in by @grafana/ui, which Grafana supplies at runtime.
+# No React Router implementation appears in the production bundle source maps.
+# Reassess if bundling, routing, or SSR usage changes, or a compatible fix ships.
+[[IgnoredVulns]]
+id = "GHSA-337j-9hxr-rhxg"
+ignoreUntil = 2026-11-10T00:00:00Z
+reason = "React Router 6 is a transitive dependency of externalized @grafana/ui and is not bundled in the plugin. The plugin performs no SSR/hydration. Grafana supplies the runtime Router. Reassess exposure and upstream fixes before expiry."
+
+[[IgnoredVulns]]
+id = "GHSA-wrjc-x8rr-h8h6"
+ignoreUntil = 2026-11-10T00:00:00Z
+reason = "React Router 6 is a transitive dependency of externalized @grafana/ui and is not bundled in the plugin. The plugin does not use Router Link/useNavigate APIs. Grafana supplies the runtime Router. Reassess exposure and upstream fixes before expiry."

@@ -2,7 +2,13 @@
 
 ## 1.7.1
 
+This release contains only dependency updates.
+
+* Technical: upgrade Grafana packages to 13.1.8 and plugin-ui to 0.17.8 while retaining React 18
+* Technical: upgrade plugin signing and E2E tools, use Node.js 24 LTS, and remove unnecessary dependency overrides
 * Security: upgrade the Go toolchain to 1.27.3 and update Go dependencies to address reported vulnerabilities
+* Security: update markdown-it to 15.0.3 to fix CVE-2026-111758
+* Security: update DOMPurify, Immutable, js-cookie, Moment, and UUID and remove vulnerable signing-tool dependencies
 
 ## 1.7.0
 
