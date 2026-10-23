@@ -23,6 +23,10 @@ jobs:
           persist-credentials: false
 
       - uses: grafana/plugin-actions/build-plugin@build-plugin/v1.2.1
+        env:
+          # Automatic OSV config discovery is disabled by the validator.
+          # Explicitly apply our reviewed, expiring exceptions while scanning.
+          PLUGIN_VALIDATOR_OSV_CONFIG: ${{ github.workspace }}/osv-scanner.toml
         # Uncomment to enable plugin signing
         # (For more info on how to generate the access policy token see https://grafana.com/developers/plugin-tools/publish-a-plugin/sign-a-plugin#generate-an-access-policy-token)
         with:
